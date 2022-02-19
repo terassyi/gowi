@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"github.com/terassyi/gowi/decoder"
+)
 
 func main() {
-	fmt.Println("Hi, this is gowi.")
+	d := decoder.New("examples/func1.wasm", 0)
+	d.Decode()
 }
