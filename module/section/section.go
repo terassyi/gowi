@@ -1,5 +1,7 @@
 package section
 
+import "errors"
+
 type Section interface {
 	Code() SectionCode
 }
@@ -7,6 +9,7 @@ type Section interface {
 type SectionCode uint8
 
 const (
+	CUSTOM   SectionCode = 0x0
 	TYPE     SectionCode = 0x1
 	IMPORT   SectionCode = 0x2
 	FUNCTION SectionCode = 0x3
@@ -18,6 +21,10 @@ const (
 	ELEMENT  SectionCode = 0x9
 	CODE     SectionCode = 0xa
 	DATA     SectionCode = 0xb
+)
+
+var (
+	InvalidSectionCode error = errors.New("invalid section code.")
 )
 
 func (code SectionCode) String() string {
@@ -46,5 +53,32 @@ func (code SectionCode) String() string {
 		return "Data"
 	default:
 		return ""
+	}
+}
+
+func New(id uint8, payload []byte) (Section, error) {
+	switch SectionCode(id) {
+	case TYPE:
+		return NewType(payload)
+	case FUNCTION:
+		return NewFunction(payload)
+	case TABLE:
+		return NewTable(payload)
+	case MEMORY:
+		return NewMemory(payload)
+	case GLOBAL:
+		return NewGlobal(payload)
+	case EXPORT:
+		return NewExport(payload)
+	case START:
+		return NewStart(payload)
+	case ELEMENT:
+		return NewElement(payload)
+	case CODE:
+		return NewCode(payload)
+	case DATA:
+		return NewData(payload)
+	default:
+		return nil, InvalidSectionCode
 	}
 }

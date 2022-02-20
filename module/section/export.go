@@ -12,6 +12,10 @@ type ExportEntry struct {
 	index       uint32
 }
 
+func NewExport(payload []byte) (*Export, error) {
+	return &Export{}, nil
+}
+
 func (*Export) Code() SectionCode {
 	return EXPORT
 }

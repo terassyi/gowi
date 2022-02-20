@@ -1,12 +1,17 @@
 package decoder
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/terassyi/gowi/module"
+	"github.com/terassyi/gowi/types"
 )
 
 const (
@@ -14,7 +19,9 @@ const (
 )
 
 var (
-	InvalidFileFormat error = errors.New("Given file is not .wasm.")
+	InvalidFileFormat  error = errors.New("Given file is not .wasm.")
+	InvalidMajicNumber error = errors.New("Invalid Majic Number.")
+	InvalidWasmVersion error = errors.New("Invalid WASM version.")
 )
 
 type Decoder struct {
@@ -66,4 +73,56 @@ func readWasmFile(path string) ([]byte, error) {
 		return nil, fmt.Errorf("readWasmFile: %w", err)
 	}
 	return data, nil
+}
+
+type sectionDecoder struct {
+	id            uint8 // if custom section, id == 0
+	payloadLength uint32
+	nameLength    uint32 // present if id == 0;
+	name          []byte // present if id == 0
+	payloadData   []byte
+}
+
+func decodeSections(data []byte) ([]sectionDecoder, error) {
+	if err := validateMajicNumber(data); err != nil {
+		return nil, fmt.Errorf("decodeSections: %w", err)
+	}
+	var sectionDecoders = []sectionDecoder{}
+	offset := 8
+	for offset < len(data) {
+		sd := sectionDecoder{}
+		sd.id = data[offset]
+		offset++
+		p, n, err := types.DecodeVarUint32(bytes.NewBuffer(data[offset : offset+5]))
+		sd.payloadLength = uint32(p)
+		if err != nil {
+			return nil, fmt.Errorf("decodeSections: %w", err)
+		}
+		offset += n
+		if sd.id == 0 {
+			p, n, err := types.DecodeVarUint32(bytes.NewBuffer(data[offset : offset+5]))
+			if err != nil {
+				return nil, fmt.Errorf("decodeSections: %w", err)
+			}
+			offset += n
+			sd.nameLength = uint32(p)
+			sd.name = data[offset : offset+int(sd.nameLength)]
+			offset += int(sd.nameLength)
+		}
+		sd.payloadData = data[offset : offset+int(sd.payloadLength)]
+		offset += int(sd.payloadLength)
+		sectionDecoders = append(sectionDecoders, sd)
+	}
+	return sectionDecoders, nil
+}
+
+func validateMajicNumber(data []byte) error {
+	majic := binary.BigEndian.Uint32(data[0:4])
+	if majic != module.MAJIC_NUMBER {
+		return fmt.Errorf("validateMajicNumber: %w", InvalidMajicNumber)
+	}
+	if binary.LittleEndian.Uint32(data[4:8]) != 0x1 {
+		return fmt.Errorf("validateMajicNumber: %w", InvalidWasmVersion)
+	}
+	return nil
 }

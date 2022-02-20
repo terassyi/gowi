@@ -5,6 +5,10 @@ type Global struct {
 	globals any // TODO global_variable*
 }
 
+func NewGlobal(payload []byte) (*Global, error) {
+	return &Global{}, nil
+}
+
 func (*Global) Code() SectionCode {
 	return GLOBAL
 }

@@ -12,6 +12,10 @@ type ElementEntry struct {
 	elems  []uint32
 }
 
+func NewElement(payload []byte) (*Element, error) {
+	return &Element{}, nil
+}
+
 func (*Element) Code() SectionCode {
 	return ELEMENT
 }

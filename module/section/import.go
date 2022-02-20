@@ -15,6 +15,10 @@ type ImportEntry struct {
 
 type Kind uint8 // import kind
 
+func NewImport(payload []byte) (*Import, error) {
+	return &Import{}, nil
+}
+
 func (*Import) Code() SectionCode {
 	return IMPORT
 }

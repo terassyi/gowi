@@ -12,6 +12,10 @@ type DataSegment struct {
 	data   []byte
 }
 
+func NewData(payload []byte) (*Data, error) {
+	return &Data{}, nil
+}
+
 func (*Data) Code() SectionCode {
 	return DATA
 }

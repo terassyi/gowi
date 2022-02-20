@@ -5,6 +5,10 @@ type Type struct {
 	entries any    // TODO func_type*
 }
 
+func NewType(payload []byte) (*Type, error) {
+	return &Type{}, nil
+}
+
 func (*Type) Code() SectionCode {
 	return TYPE
 }
