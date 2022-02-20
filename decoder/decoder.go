@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/terassyi/gowi/module"
+	"github.com/terassyi/gowi/module/section"
 	"github.com/terassyi/gowi/types"
 )
 
@@ -83,11 +84,11 @@ type sectionDecoder struct {
 	payloadData   []byte
 }
 
-func decodeSections(data []byte) ([]sectionDecoder, error) {
+func decodeSections(data []byte) ([]section.Section, error) {
 	if err := validateMajicNumber(data); err != nil {
 		return nil, fmt.Errorf("decodeSections: %w", err)
 	}
-	var sectionDecoders = []sectionDecoder{}
+	var sections []section.Section
 	offset := 8
 	for offset < len(data) {
 		sd := sectionDecoder{}
@@ -111,9 +112,13 @@ func decodeSections(data []byte) ([]sectionDecoder, error) {
 		}
 		sd.payloadData = data[offset : offset+int(sd.payloadLength)]
 		offset += int(sd.payloadLength)
-		sectionDecoders = append(sectionDecoders, sd)
+		sec, err := section.New(sd.id, sd.payloadData)
+		if err != nil {
+			return nil, fmt.Errorf("decodeSections: %w", err)
+		}
+		sections = append(sections, sec)
 	}
-	return sectionDecoders, nil
+	return sections, nil
 }
 
 func validateMajicNumber(data []byte) error {

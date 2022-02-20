@@ -1,6 +1,9 @@
 package section
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Section interface {
 	Code() SectionCode
@@ -62,6 +65,8 @@ func New(id uint8, payload []byte) (Section, error) {
 		return NewType(payload)
 	case FUNCTION:
 		return NewFunction(payload)
+	case IMPORT:
+		return NewImport(payload)
 	case TABLE:
 		return NewTable(payload)
 	case MEMORY:
@@ -79,6 +84,6 @@ func New(id uint8, payload []byte) (Section, error) {
 	case DATA:
 		return NewData(payload)
 	default:
-		return nil, InvalidSectionCode
+		return nil, fmt.Errorf("%w: %v", InvalidSectionCode, id)
 	}
 }

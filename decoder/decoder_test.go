@@ -4,7 +4,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/terassyi/gowi/module"
+	"github.com/terassyi/gowi/module/section"
 )
 
 func TestValidateExt_Pass(t *testing.T) {
@@ -34,16 +37,29 @@ func TestValidateMajicNumber_Pass(t *testing.T) {
 }
 
 func TestDecodeSections(t *testing.T) {
-	path := "../examples/func1.wasm"
-	data, err := readWasmFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	sds, err := decodeSections(data)
-	if err != nil {
-		t.Fatalf("decodeSections error: %v", err)
-	}
-	if len(sds) != 4 {
-		t.Errorf("want: 4, actual: %d", len(sds))
+	for _, f := range []struct {
+		path  string
+		codes []section.SectionCode
+	}{
+		{path: "../examples/empty_module.wasm", codes: []section.SectionCode{}},
+		{path: "../examples/func1.wasm", codes: []section.SectionCode{section.TYPE, section.FUNCTION, section.EXPORT, section.CODE}},
+		{path: "../examples/call_func1.wasm", codes: []section.SectionCode{section.TYPE, section.FUNCTION, section.EXPORT, section.CODE}},
+		{path: "../examples/global.wasm", codes: []section.SectionCode{section.TYPE, section.IMPORT, section.FUNCTION, section.EXPORT, section.CODE}},
+		{path: "../examples/import_js.wasm", codes: []section.SectionCode{section.TYPE, section.IMPORT, section.FUNCTION, section.EXPORT, section.CODE}},
+		{path: "../examples/mem1.wasm", codes: []section.SectionCode{section.TYPE, section.IMPORT, section.FUNCTION, section.EXPORT, section.CODE, section.DATA}},
+		{path: "../examples/table.wasm", codes: []section.SectionCode{section.TYPE, section.FUNCTION, section.TABLE, section.EXPORT, section.ELEMENT, section.CODE}},
+		{path: "../examples/shared0.wasm", codes: []section.SectionCode{section.TYPE, section.IMPORT, section.FUNCTION, section.ELEMENT, section.CODE}},
+		{path: "../examples/shared1.wasm", codes: []section.SectionCode{section.TYPE, section.IMPORT, section.FUNCTION, section.EXPORT, section.CODE}},
+	} {
+		d, err := readWasmFile(f.path)
+		require.NoError(t, err)
+		secs, err := decodeSections(d)
+		require.NoError(t, err)
+		var codes = []section.SectionCode{}
+		for _, sec := range secs {
+			codes = append(codes, sec.Code())
+		}
+		assert.Equal(t, f.codes, codes)
+		t.Logf("pass %s", f.path)
 	}
 }
