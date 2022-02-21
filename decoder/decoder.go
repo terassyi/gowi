@@ -26,14 +26,12 @@ var (
 )
 
 type Decoder struct {
-	path  string
-	flags int
+	path string
 }
 
-func New(path string, flags int) *Decoder {
+func New(path string) *Decoder {
 	return &Decoder{
-		path:  path,
-		flags: flags,
+		path: path,
 	}
 }
 
