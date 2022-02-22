@@ -1,11 +1,25 @@
 package section
 
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/terassyi/gowi/types"
+)
+
 type Start struct {
-	index uint32
+	Index uint32
 }
 
 func NewStart(payload []byte) (*Start, error) {
-	return &Start{}, nil
+	buf := bytes.NewBuffer(payload)
+	index, _, err := types.DecodeVarUint32(buf)
+	if err != nil {
+		return nil, fmt.Errorf("NewStart: decode index: %w", err)
+	}
+	return &Start{
+		Index: uint32(index),
+	}, nil
 }
 
 func (*Start) Code() SectionCode {

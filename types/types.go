@@ -10,6 +10,7 @@ var (
 	InvalidValueType    error = errors.New("Invalid value type")
 	InvalidFuncType     error = errors.New("Invalid func type")
 	InvalidExternalKind error = errors.New("Invalid external kind value")
+	InvalidInitExpr     error = errors.New("Invalid init_expr")
 	NotImplemented      error = errors.New("Not implemented")
 )
 
@@ -119,6 +120,23 @@ func DecodeFuncType(payload []byte) (*FuncType, int, error) {
 type GlobalType struct {
 	ContentType ValueType
 	Mut         bool
+}
+
+func NewGloablType(buf *bytes.Buffer) (*GlobalType, error) {
+	gt := &GlobalType{}
+	content, _, err := DecodeVarUint32(buf)
+	if err != nil {
+		return nil, fmt.Errorf("NewGlobalType: decode content_type: %w", err)
+	}
+	gt.ContentType = ValueType(content)
+	m, err := buf.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("NewGlobalType: decode mut: %w", err)
+	}
+	if m == byte(1) {
+		gt.Mut = true
+	}
+	return gt, nil
 }
 
 type TableType struct {
