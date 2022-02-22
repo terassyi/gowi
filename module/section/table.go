@@ -1,8 +1,10 @@
 package section
 
+import "github.com/terassyi/gowi/types"
+
 type Table struct {
 	count   uint32
-	entries any // TODO table_type*
+	entries []types.TableType
 }
 
 func NewTable(payload []byte) (*Table, error) {

@@ -3,15 +3,22 @@ package section
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSectionNew(t *testing.T) {
-	sec, err := New(0x1, []byte{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sec.Code() != TYPE {
-		t.Errorf("want %v, actual: %v", TYPE.String(), sec.Code().String())
+	for _, d := range []struct {
+		id      uint8
+		payload []byte
+		sec     *Type
+	}{
+		{id: 0x01, payload: []byte{0x01, 0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f}, sec: &Type{count: 1}},
+	} {
+		sec, err := New(d.id, d.payload)
+		require.NoError(t, err)
+		assert.Equal(t, d.sec.count, sec.(*Type).count)
 	}
 }
 func TestSectionNew_InvalidSectionCode(t *testing.T) {

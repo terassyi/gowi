@@ -9,7 +9,8 @@ RUN apt update -y && \
  	cd build && \
  	cmake .. && \
  	cmake --build . && \
-	cp ../bin/* /usr/local/bin
+	cp ../bin/* /usr/local/bin && \
+	apt install -y hexyl
 	
 # devcontainer golang settings
 # RUN go install -v \

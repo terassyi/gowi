@@ -1,8 +1,10 @@
 package section
 
+import "github.com/terassyi/gowi/types"
+
 type Memory struct {
 	count   uint32
-	entries any // TODO memory_type*
+	entries []types.MemoryType
 }
 
 func NewMemory(payload []byte) (*Memory, error) {
