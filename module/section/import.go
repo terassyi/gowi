@@ -33,20 +33,26 @@ func NewImport(payload []byte) (*Import, error) {
 	entries := make([]*ImportEntry, 0, int(count))
 	for i := 0; i < int(count); i++ {
 		entry := &ImportEntry{}
-		moduleLength, _, err := types.DecodeVarUint32(buf)
+		moduleNameLength, _, err := types.DecodeVarUint32(buf)
 		if err != nil {
 			return nil, fmt.Errorf("NewImport: decode module_len: %w", err)
 		}
-		entry.ModuleNameLength = uint32(moduleLength)
-		entry.ModuleName = buf.Bytes()[:int(moduleLength)]
-		buf.Next(int(moduleLength))
+		entry.ModuleNameLength = uint32(moduleNameLength)
+		name := make([]byte, int(moduleNameLength))
+		if _, err := buf.Read(name); err != nil {
+			return nil, fmt.Errorf("NewImport: decode module_name: %w", err)
+		}
+		entry.ModuleName = name
 		fieldLength, _, err := types.DecodeVarUint32(buf)
 		if err != nil {
 			return nil, fmt.Errorf("NewImport: decode field_len: %w", err)
 		}
 		entry.FieldLength = uint32(fieldLength)
-		entry.FieldString = buf.Bytes()[:int(fieldLength)]
-		buf.Next(int(fieldLength))
+		field := make([]byte, int(fieldLength))
+		if _, err := buf.Read(field); err != nil {
+			return nil, fmt.Errorf("NewImport: decode field_string: %w", err)
+		}
+		entry.FieldString = field
 		b, err := buf.ReadByte()
 		if err != nil {
 			return nil, fmt.Errorf("NewImport: decode external_kind: %w", err)

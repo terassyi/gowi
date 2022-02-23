@@ -82,7 +82,7 @@ func TestDecode(t *testing.T) {
 					Bodies: []*section.FunctionBody{
 						{
 							Locals: []*section.LocalEntry{},
-							Code:   []byte{0x20, 0x00, 0x20, 0x01, 0x6a},
+							Code:   []byte{0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b},
 						},
 					},
 				},

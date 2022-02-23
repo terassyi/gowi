@@ -66,7 +66,7 @@ func newFunctionBody(buf *bytes.Buffer) (*FunctionBody, error) {
 	}
 	return &FunctionBody{
 		Locals: locals,
-		Code:   code[:len(code)-1],
+		Code:   code,
 	}, nil
 }
 

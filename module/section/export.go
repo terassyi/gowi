@@ -31,8 +31,11 @@ func NewExport(payload []byte) (*Export, error) {
 		if err != nil {
 			return nil, fmt.Errorf("NewExport: decode fieldLength: %w", err)
 		}
-		entry.FieldString = buf.Bytes()[:fieldLength]
-		buf.Next(int(fieldLength))
+		field := make([]byte, int(fieldLength))
+		if _, err := buf.Read(field); err != nil {
+			return nil, fmt.Errorf("NewExport: decode field_string: %w", err)
+		}
+		entry.FieldString = field
 		externalKind, err := buf.ReadByte()
 		if err != nil {
 			return nil, fmt.Errorf("NewExport: decode external_kind: %w", err)

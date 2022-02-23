@@ -39,13 +39,16 @@ func NewData(payload []byte) (*Data, error) {
 		if err != nil {
 			return nil, fmt.Errorf("NewData: decode size: %w", err)
 		}
+		data := make([]byte, int(size))
+		if _, err := buf.Read(data); err != nil {
+			return nil, fmt.Errorf("NewData: decode data: %w", err)
+		}
 		entries = append(entries, &DataSegment{
 			Index:  uint32(index),
 			Offset: offset[:len(offset)-1],
 			Size:   uint32(size),
-			Data:   buf.Bytes()[:int(size)],
+			Data:   data,
 		})
-		buf.Next(int(size))
 	}
 	return &Data{
 		Entries: entries,
