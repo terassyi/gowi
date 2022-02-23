@@ -16,8 +16,7 @@ func TestNewCode(t *testing.T) {
 		{
 			payload: []byte{0x01, 0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b},
 			sec: &Code{
-				count: 1,
-				bodies: []*FunctionBody{
+				Bodies: []*FunctionBody{
 					{
 						Locals: []*LocalEntry{},
 						Code:   []byte{0x20, 0x00, 0x20, 0x01, 0x6a},
@@ -32,8 +31,7 @@ func TestNewCode(t *testing.T) {
 				0x08, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x00, 0x0b,
 			},
 			sec: &Code{
-				count: 3,
-				bodies: []*FunctionBody{
+				Bodies: []*FunctionBody{
 					{
 						Locals: []*LocalEntry{},
 						Code:   []byte{0x41, 0x00, 0x41, 0x00, 0x2d, 0x00, 0x00, 0x41, 0x01, 0x6a, 0x3a, 0x00, 0x00},
@@ -55,8 +53,7 @@ func TestNewCode(t *testing.T) {
 				0x06, 0x01, 0x01, 0x7e, 0x20, 0x00, 0x0b,
 			},
 			sec: &Code{
-				count: 2,
-				bodies: []*FunctionBody{
+				Bodies: []*FunctionBody{
 					{
 						Locals: []*LocalEntry{{Count: uint32(0x01), Type: types.I32}},
 						Code:   []byte{0x20, 0x00},
@@ -71,7 +68,6 @@ func TestNewCode(t *testing.T) {
 	} {
 		c, err := NewCode(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, c.count)
-		assert.Equal(t, d.sec.bodies, c.bodies)
+		assert.Equal(t, d.sec, c)
 	}
 }

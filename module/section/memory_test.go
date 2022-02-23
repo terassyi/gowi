@@ -16,8 +16,7 @@ func TestMemory(t *testing.T) {
 		{
 			payload: []byte{0x01, 0x00, 0x01},
 			sec: &Memory{
-				count: 1,
-				entries: []*types.MemoryType{
+				Entries: []*types.MemoryType{
 					{
 						Limits: &types.ResizableLimits{
 							Flag:    false,
@@ -30,7 +29,6 @@ func TestMemory(t *testing.T) {
 	} {
 		m, err := NewMemory(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, m.count)
-		assert.Equal(t, d.sec.entries, m.entries)
+		assert.Equal(t, d.sec, m)
 	}
 }

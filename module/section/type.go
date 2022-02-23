@@ -8,8 +8,8 @@ import (
 )
 
 type Type struct {
-	count   uint32 // count of type entries to follow
-	entries []*types.FuncType
+	// count   uint32 // count of type entries to follow
+	Entries []*types.FuncType
 }
 
 func NewType(payload []byte) (*Type, error) {
@@ -39,8 +39,7 @@ func NewType(payload []byte) (*Type, error) {
 		entries = append(entries, f)
 	}
 	return &Type{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

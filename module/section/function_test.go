@@ -12,8 +12,8 @@ func TestNewFunction(t *testing.T) {
 		payload []byte
 		sec     *Function
 	}{
-		{payload: []byte{0x02, 0x01, 0x00}, sec: &Function{count: 2, types: []uint32{0x01, 0x00}}},
-		{payload: []byte{0x02, 0x00, 0x00}, sec: &Function{count: 2, types: []uint32{0x00, 0x00}}},
+		{payload: []byte{0x02, 0x01, 0x00}, sec: &Function{Types: []uint32{0x01, 0x00}}},
+		{payload: []byte{0x02, 0x00, 0x00}, sec: &Function{Types: []uint32{0x00, 0x00}}},
 	} {
 		f, err := NewFunction(d.payload)
 		require.NoError(t, err)

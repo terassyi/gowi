@@ -8,8 +8,8 @@ import (
 )
 
 type Data struct {
-	count   uint32
-	entries []*DataSegment
+	// count   uint32
+	Entries []*DataSegment
 }
 
 type DataSegment struct {
@@ -48,8 +48,7 @@ func NewData(payload []byte) (*Data, error) {
 		buf.Next(int(size))
 	}
 	return &Data{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

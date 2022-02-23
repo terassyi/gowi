@@ -8,8 +8,7 @@ import (
 )
 
 type Import struct {
-	count   uint32
-	entries []*ImportEntry
+	Entries []*ImportEntry
 }
 
 type ImportEntry struct {
@@ -83,8 +82,7 @@ func NewImport(payload []byte) (*Import, error) {
 	}
 
 	return &Import{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

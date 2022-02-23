@@ -8,8 +8,8 @@ import (
 )
 
 type Code struct {
-	count  uint32
-	bodies []*FunctionBody
+	// count  uint32
+	Bodies []*FunctionBody
 }
 
 type FunctionBody struct {
@@ -39,8 +39,7 @@ func NewCode(payload []byte) (*Code, error) {
 		funcBodys = append(funcBodys, f)
 	}
 	return &Code{
-		count:  uint32(count),
-		bodies: funcBodys,
+		Bodies: funcBodys,
 	}, nil
 }
 

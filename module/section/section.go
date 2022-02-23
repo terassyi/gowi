@@ -30,8 +30,41 @@ var (
 	InvalidSectionCode error = errors.New("invalid section code.")
 )
 
+func NewSectionCode(val uint8) (SectionCode, error) {
+	switch val {
+	case uint8(CUSTOM):
+		return CUSTOM, nil
+	case uint8(TYPE):
+		return TYPE, nil
+	case uint8(IMPORT):
+		return IMPORT, nil
+	case uint8(FUNCTION):
+		return FUNCTION, nil
+	case uint8(TABLE):
+		return TABLE, nil
+	case uint8(MEMORY):
+		return MEMORY, nil
+	case uint8(GLOBAL):
+		return GLOBAL, nil
+	case uint8(EXPORT):
+		return EXPORT, nil
+	case uint8(START):
+		return START, nil
+	case uint8(ELEMENT):
+		return ELEMENT, nil
+	case uint8(CODE):
+		return CODE, nil
+	case uint8(DATA):
+		return DATA, nil
+	default:
+		return 0xff, fmt.Errorf("%w: %x", InvalidSectionCode, val)
+	}
+}
+
 func (code SectionCode) String() string {
 	switch code {
+	case CUSTOM:
+		return "CUSTOM"
 	case TYPE:
 		return "Type"
 	case IMPORT:
@@ -56,34 +89,5 @@ func (code SectionCode) String() string {
 		return "Data"
 	default:
 		return ""
-	}
-}
-
-func New(id uint8, payload []byte) (Section, error) {
-	switch SectionCode(id) {
-	case TYPE:
-		return NewType(payload)
-	case FUNCTION:
-		return NewFunction(payload)
-	case IMPORT:
-		return NewImport(payload)
-	case TABLE:
-		return NewTable(payload)
-	case MEMORY:
-		return NewMemory(payload)
-	case GLOBAL:
-		return NewGlobal(payload)
-	case EXPORT:
-		return NewExport(payload)
-	case START:
-		return NewStart(payload)
-	case ELEMENT:
-		return NewElement(payload)
-	case CODE:
-		return NewCode(payload)
-	case DATA:
-		return NewData(payload)
-	default:
-		return nil, fmt.Errorf("%w: %v", InvalidSectionCode, id)
 	}
 }

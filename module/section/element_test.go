@@ -15,8 +15,7 @@ func TestElement(t *testing.T) {
 		{
 			payload: []byte{0x01, 0x00, 0x41, 0x00, 0x0b, 0x01, 0x00},
 			sec: &Element{
-				count: 1,
-				entries: []*ElementEntry{
+				Entries: []*ElementEntry{
 					{
 						Index:  0x00,
 						Offset: []byte{0x41, 0x00},
@@ -29,7 +28,6 @@ func TestElement(t *testing.T) {
 	} {
 		e, err := NewElement(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, e.count)
-		assert.Equal(t, d.sec.entries, e.entries)
+		assert.Equal(t, d.sec, e)
 	}
 }

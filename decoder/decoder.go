@@ -3,7 +3,6 @@ package decoder
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -36,19 +35,111 @@ func New(path string) *Decoder {
 }
 
 func (d *Decoder) Decode() (any, error) {
-	if err := decode(d.path); err != nil {
+	m, err := decode(d.path)
+	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return m, nil
 }
 
-func decode(path string) error {
+func decode(path string) (*module.Module, error) {
 	data, err := readWasmFile(path)
 	if err != nil {
-		return fmt.Errorf("decode: %w", err)
+		return nil, fmt.Errorf("decode: %w", err)
 	}
-	fmt.Println(hex.Dump(data))
-	return nil
+	buf := bytes.NewBuffer(data)
+	if err := validateMajicNumber(buf); err != nil {
+		return nil, fmt.Errorf("decode: majic_number: %w", err)
+	}
+	module := &module.Module{}
+	version, err := decodeVersion(buf)
+	if err != nil {
+		return nil, fmt.Errorf("decode: version: %w", err)
+	}
+	module.Version = version
+	for buf.Len() > 0 {
+		sd, err := newSectionDecoder(buf)
+		if err != nil {
+			return nil, fmt.Errorf("decode: %w", err)
+		}
+		switch sd.id {
+		case section.CUSTOM:
+			s, err := section.NewCustom(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Custom = s
+		case section.TYPE:
+			s, err := section.NewType(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Type = s
+		case section.IMPORT:
+			s, err := section.NewImport(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Import = s
+		case section.FUNCTION:
+			s, err := section.NewFunction(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Function = s
+		case section.TABLE:
+			s, err := section.NewTable(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Table = s
+		case section.MEMORY:
+			s, err := section.NewMemory(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Memory = s
+		case section.GLOBAL:
+			s, err := section.NewGlobal(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Global = s
+		case section.EXPORT:
+			s, err := section.NewExport(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Export = s
+		case section.START:
+			s, err := section.NewStart(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Start = s
+		case section.ELEMENT:
+			s, err := section.NewElement(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Element = s
+		case section.CODE:
+			s, err := section.NewCode(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Code = s
+		case section.DATA:
+			s, err := section.NewData(sd.payloadData)
+			if err != nil {
+				return nil, fmt.Errorf("decode: %w", err)
+			}
+			module.Data = s
+		default:
+			return nil, section.InvalidSectionCode
+		}
+	}
+	return module, nil
 }
 
 func validateExt(path string) error {
@@ -75,57 +166,65 @@ func readWasmFile(path string) ([]byte, error) {
 }
 
 type sectionDecoder struct {
-	id            uint8 // if custom section, id == 0
+	id            section.SectionCode // if custom section, id == 0
 	payloadLength uint32
 	nameLength    uint32 // present if id == 0;
 	name          []byte // present if id == 0
 	payloadData   []byte
 }
 
-func decodeSections(data []byte) ([]section.Section, error) {
-	if err := validateMajicNumber(data); err != nil {
-		return nil, fmt.Errorf("decodeSections: %w", err)
+func newSectionDecoder(buf *bytes.Buffer) (*sectionDecoder, error) {
+	sd := &sectionDecoder{}
+	id, err := buf.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("newSectionDecoder: decode id: %w", err)
 	}
-	var sections []section.Section
-	offset := 8
-	for offset < len(data) {
-		sd := sectionDecoder{}
-		sd.id = data[offset]
-		offset++
-		p, n, err := types.DecodeVarUint32(bytes.NewBuffer(data[offset : offset+5]))
-		sd.payloadLength = uint32(p)
-		if err != nil {
-			return nil, fmt.Errorf("decodeSections: %w", err)
-		}
-		offset += n
-		if sd.id == 0 {
-			p, n, err := types.DecodeVarUint32(bytes.NewBuffer(data[offset : offset+5]))
-			if err != nil {
-				return nil, fmt.Errorf("decodeSections: %w", err)
-			}
-			offset += n
-			sd.nameLength = uint32(p)
-			sd.name = data[offset : offset+int(sd.nameLength)]
-			offset += int(sd.nameLength)
-		}
-		sd.payloadData = data[offset : offset+int(sd.payloadLength)]
-		offset += int(sd.payloadLength)
-		sec, err := section.New(sd.id, sd.payloadData)
-		if err != nil {
-			return nil, fmt.Errorf("decodeSections: %w", err)
-		}
-		sections = append(sections, sec)
+	sectionId, err := section.NewSectionCode(id)
+	if err != nil {
+		return nil, fmt.Errorf("newSectionDecoder: decode id: %w", err)
 	}
-	return sections, nil
+	sd.id = sectionId
+	payloadLength, _, err := types.DecodeVarUint32(buf)
+	if err != nil {
+		return nil, fmt.Errorf("newSectionDecoder: decode payload_length: %w", err)
+	}
+	sd.payloadLength = uint32(payloadLength)
+	if id == byte(0x00) {
+		nameLength, _, err := types.DecodeVarUint32(buf)
+		if err != nil {
+			return nil, fmt.Errorf("newSectionDecoder: decode name_length: %w", err)
+		}
+		sd.nameLength = uint32(nameLength)
+		name := make([]byte, int(nameLength))
+		if _, err := buf.Read(name); err != nil {
+			return nil, fmt.Errorf("newSectionDecoder: decode name: %w", err)
+		}
+		sd.name = name
+	}
+	data := make([]byte, int(sd.payloadLength))
+	if _, err := buf.Read(data); err != nil {
+		return nil, fmt.Errorf("newSectionDecoder: decode payload_data: %w", err)
+	}
+	sd.payloadData = data
+	return sd, nil
 }
 
-func validateMajicNumber(data []byte) error {
-	majic := binary.BigEndian.Uint32(data[0:4])
+func validateMajicNumber(buf *bytes.Buffer) error {
+	b := make([]byte, 4)
+	if _, err := buf.Read(b); err != nil {
+		return fmt.Errorf("validateMajicNumber: read: %w", err)
+	}
+	majic := binary.BigEndian.Uint32(b)
 	if majic != module.MAJIC_NUMBER {
 		return fmt.Errorf("validateMajicNumber: %w", InvalidMajicNumber)
 	}
-	if binary.LittleEndian.Uint32(data[4:8]) != 0x1 {
-		return fmt.Errorf("validateMajicNumber: %w", InvalidWasmVersion)
-	}
 	return nil
+}
+
+func decodeVersion(buf *bytes.Buffer) (uint32, error) {
+	b := make([]byte, 4)
+	if _, err := buf.Read(b); err != nil {
+		return 0, fmt.Errorf("decodeVersion: read: %w", err)
+	}
+	return binary.LittleEndian.Uint32(b), nil
 }

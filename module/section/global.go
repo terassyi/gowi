@@ -12,8 +12,7 @@ const (
 )
 
 type Global struct {
-	count   uint32
-	globals []*GlobalEntry
+	Globals []*GlobalEntry
 }
 
 type GlobalEntry struct {
@@ -36,8 +35,7 @@ func NewGlobal(payload []byte) (*Global, error) {
 		globals = append(globals, g)
 	}
 	return &Global{
-		count:   uint32(count),
-		globals: globals,
+		Globals: globals,
 	}, nil
 }
 

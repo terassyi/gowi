@@ -8,8 +8,7 @@ import (
 )
 
 type Element struct {
-	count   uint32
-	entries []*ElementEntry
+	Entries []*ElementEntry
 }
 
 type ElementEntry struct {
@@ -55,8 +54,7 @@ func NewElement(payload []byte) (*Element, error) {
 		})
 	}
 	return &Element{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

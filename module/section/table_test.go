@@ -16,8 +16,7 @@ func TestNewTable(t *testing.T) {
 		{
 			payload: []byte{0x01, 0x70, 0x00, 0x02},
 			sec: &Table{
-				count: 1,
-				entries: []*types.TableType{
+				Entries: []*types.TableType{
 					{
 						ElementType: types.ElemType(types.ANYFUNC),
 						Limits:      &types.ResizableLimits{Flag: false, Initial: uint32(0x02)},
@@ -28,7 +27,6 @@ func TestNewTable(t *testing.T) {
 	} {
 		ty, err := NewTable(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, ty.count)
-		assert.Equal(t, d.sec.entries, ty.entries)
+		assert.Equal(t, d.sec, ty)
 	}
 }

@@ -8,8 +8,8 @@ import (
 )
 
 type Table struct {
-	count   uint32
-	entries []*types.TableType
+	// count   uint32
+	Entries []*types.TableType
 }
 
 func NewTable(payload []byte) (*Table, error) {
@@ -27,8 +27,7 @@ func NewTable(payload []byte) (*Table, error) {
 		entries = append(entries, entry)
 	}
 	return &Table{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

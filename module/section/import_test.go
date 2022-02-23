@@ -16,8 +16,7 @@ func TestNewImport(t *testing.T) {
 		{
 			payload: []byte{0x01, 0x07, 0x63, 0x6f, 0x6e, 0x73, 0x6f, 0x6c, 0x65, 0x03, 0x6c, 0x6f, 0x67, 0x00, 0x00},
 			sec: &Import{
-				count: 1,
-				entries: []*ImportEntry{
+				Entries: []*ImportEntry{
 					{
 						ModuleNameLength: uint32(0x07),
 						ModuleName:       []byte{0x63, 0x6f, 0x6e, 0x73, 0x6f, 0x6c, 0x65},
@@ -38,8 +37,7 @@ func TestNewImport(t *testing.T) {
 				0x03, 0x6d, 0x65, 0x6d,
 				0x02, 0x00, 0x01},
 			sec: &Import{
-				count: 2,
-				entries: []*ImportEntry{
+				Entries: []*ImportEntry{
 					{
 						ModuleNameLength: uint32(0x07),
 						ModuleName:       []byte{0x63, 0x6f, 0x6e, 0x73, 0x6f, 0x6c, 0x65},
@@ -73,8 +71,7 @@ func TestNewImport(t *testing.T) {
 				0x05, 0x74, 0x61, 0x62, 0x6c, 0x65,
 				0x01, 0x70, 0x00, 0x01},
 			sec: &Import{
-				count: 2,
-				entries: []*ImportEntry{
+				Entries: []*ImportEntry{
 					{
 						ModuleNameLength: uint32(0x02),
 						ModuleName:       []byte{0x6a, 0x73},
@@ -108,7 +105,6 @@ func TestNewImport(t *testing.T) {
 	} {
 		i, err := NewImport(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, i.count)
-		assert.Equal(t, d.sec.entries, i.entries)
+		assert.Equal(t, d.sec, i)
 	}
 }

@@ -15,8 +15,7 @@ func TestData(t *testing.T) {
 		{
 			payload: []byte{0x01, 0x00, 0x41, 0x00, 0x0b, 0x01, 0x41},
 			sec: &Data{
-				count: uint32(0x01),
-				entries: []*DataSegment{
+				Entries: []*DataSegment{
 					{
 						Index:  uint32(0x00),
 						Offset: []byte{0x41, 0x00},
@@ -34,8 +33,7 @@ func TestData(t *testing.T) {
 				0x00, 0x41, 0x05, 0x0b, 0x01, 0x78,
 				0x00, 0x41, 0x03, 0x0b, 0x01, 0x63},
 			sec: &Data{
-				count: uint32(0x05),
-				entries: []*DataSegment{
+				Entries: []*DataSegment{
 					{
 						Index:  uint32(0x00),
 						Offset: []byte{0x41, 0x00},
@@ -72,7 +70,6 @@ func TestData(t *testing.T) {
 	} {
 		data, err := NewData(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, data.count)
-		assert.Equal(t, d.sec.entries, data.entries)
+		assert.Equal(t, d.sec, data)
 	}
 }

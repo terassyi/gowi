@@ -8,8 +8,8 @@ import (
 )
 
 type Memory struct {
-	count   uint32
-	entries []*types.MemoryType
+	// count   uint32
+	Entries []*types.MemoryType
 }
 
 func NewMemory(payload []byte) (*Memory, error) {
@@ -27,8 +27,7 @@ func NewMemory(payload []byte) (*Memory, error) {
 		entries = append(entries, entry)
 	}
 	return &Memory{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

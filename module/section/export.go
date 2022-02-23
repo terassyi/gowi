@@ -8,15 +8,14 @@ import (
 )
 
 type Export struct {
-	count   uint32
-	entries []*ExportEntry
+	// count   uint32
+	Entries []*ExportEntry
 }
 
 type ExportEntry struct {
-	fieldLength uint32
-	fieldString []byte
-	kind        types.ExternalKind
-	index       uint32
+	FieldString []byte
+	Kind        types.ExternalKind
+	Index       uint32
 }
 
 func NewExport(payload []byte) (*Export, error) {
@@ -32,14 +31,13 @@ func NewExport(payload []byte) (*Export, error) {
 		if err != nil {
 			return nil, fmt.Errorf("NewExport: decode fieldLength: %w", err)
 		}
-		entry.fieldLength = uint32(fieldLength)
-		entry.fieldString = buf.Bytes()[:fieldLength]
+		entry.FieldString = buf.Bytes()[:fieldLength]
 		buf.Next(int(fieldLength))
 		externalKind, err := buf.ReadByte()
 		if err != nil {
 			return nil, fmt.Errorf("NewExport: decode external_kind: %w", err)
 		}
-		entry.kind, err = types.NewExternalKind(externalKind)
+		entry.Kind, err = types.NewExternalKind(externalKind)
 		if err != nil {
 			return nil, fmt.Errorf("NewExport: decode external_kind: %w", err)
 		}
@@ -47,12 +45,11 @@ func NewExport(payload []byte) (*Export, error) {
 		if err != nil {
 			return nil, fmt.Errorf("NewExport: decode index: %w", err)
 		}
-		entry.index = uint32(index)
+		entry.Index = uint32(index)
 		entries = append(entries, entry)
 	}
 	return &Export{
-		count:   uint32(count),
-		entries: entries,
+		Entries: entries,
 	}, nil
 }
 

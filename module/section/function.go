@@ -8,8 +8,7 @@ import (
 )
 
 type Function struct {
-	count uint32
-	types []uint32
+	Types []uint32
 }
 
 func NewFunction(payload []byte) (*Function, error) {
@@ -27,8 +26,7 @@ func NewFunction(payload []byte) (*Function, error) {
 		typs = append(typs, uint32(n))
 	}
 	return &Function{
-		count: uint32(count),
-		types: typs,
+		Types: typs,
 	}, nil
 }
 

@@ -16,8 +16,7 @@ func TestNewGloabal(t *testing.T) {
 		{
 			payload: []byte{0x02, 0x7f, 0x00, 0x41, 0x7e, 0x0b, 0x7f, 0x01, 0x41, 0x74, 0x0b},
 			sec: &Global{
-				count: uint32(0x02),
-				globals: []*GlobalEntry{
+				Globals: []*GlobalEntry{
 					{
 						Type: &types.GlobalType{
 							ContentType: types.I32,
@@ -38,7 +37,6 @@ func TestNewGloabal(t *testing.T) {
 	} {
 		g, err := NewGlobal(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, g.count)
-		assert.Equal(t, d.sec.globals, g.globals)
+		assert.Equal(t, d.sec, g)
 	}
 }

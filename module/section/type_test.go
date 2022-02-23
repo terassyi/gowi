@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/terassyi/gowi/types"
 )
 
 func TestNewType(t *testing.T) {
@@ -12,14 +13,72 @@ func TestNewType(t *testing.T) {
 		payload []byte
 		sec     *Type
 	}{
-		{payload: []byte{0x01, 0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f}, sec: &Type{count: 1}},
-		{payload: []byte{0x01, 0x60, 0x00, 0x01, 0x7f, 0x01}, sec: &Type{count: 1}},
-		{payload: []byte{0x01, 0x60, 0x00, 0x00}, sec: &Type{count: 1}},
-		{payload: []byte{0x02, 0x60, 0x01, 0x7f, 0x00, 0x60, 0x00, 0x00}, sec: &Type{count: 2}},
-		{payload: []byte{0x02, 0x60, 0x00, 0x01, 0x7f, 0x60, 0x01, 0x7f, 0x01, 0x7f}, sec: &Type{count: 2}},
+		{
+			payload: []byte{0x01, 0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f},
+			sec: &Type{
+				Entries: []*types.FuncType{
+					{
+						Params:  []types.ValueType{types.I32, types.I32},
+						Returns: []types.ValueType{types.I32},
+					},
+				},
+			},
+		},
+		{
+			payload: []byte{0x01, 0x60, 0x00, 0x01, 0x7f},
+			sec: &Type{
+				Entries: []*types.FuncType{
+					{
+						Params:  []types.ValueType{},
+						Returns: []types.ValueType{types.I32},
+					},
+				},
+			},
+		},
+		{
+			payload: []byte{0x01, 0x60, 0x00, 0x00},
+			sec: &Type{
+				Entries: []*types.FuncType{
+					{
+						Params:  []types.ValueType{},
+						Returns: []types.ValueType{},
+					},
+				},
+			},
+		},
+		{
+			payload: []byte{0x02, 0x60, 0x01, 0x7f, 0x00, 0x60, 0x00, 0x00},
+			sec: &Type{
+				Entries: []*types.FuncType{
+					{
+						Params:  []types.ValueType{types.I32},
+						Returns: []types.ValueType{},
+					},
+					{
+						Params:  []types.ValueType{},
+						Returns: []types.ValueType{},
+					},
+				},
+			},
+		},
+		{
+			payload: []byte{0x02, 0x60, 0x00, 0x01, 0x7f, 0x60, 0x01, 0x7f, 0x01, 0x7f},
+			sec: &Type{
+				Entries: []*types.FuncType{
+					{
+						Params:  []types.ValueType{},
+						Returns: []types.ValueType{types.I32},
+					},
+					{
+						Params:  []types.ValueType{types.I32},
+						Returns: []types.ValueType{types.I32},
+					},
+				},
+			},
+		},
 	} {
 		typ, err := NewType(d.payload)
 		require.NoError(t, err)
-		assert.Equal(t, d.sec.count, typ.count)
+		assert.Equal(t, d.sec, typ)
 	}
 }
