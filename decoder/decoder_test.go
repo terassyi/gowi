@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/terassyi/gowi/instruction"
 	"github.com/terassyi/gowi/types"
 
 	"github.com/stretchr/testify/assert"
@@ -82,7 +83,8 @@ func TestDecode(t *testing.T) {
 					Bodies: []*section.FunctionBody{
 						{
 							Locals: []*section.LocalEntry{},
-							Code:   []byte{0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b},
+							// Code:   []byte{0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b},
+							Code: []instruction.Instruction{&instruction.GetLocal{Imm: uint32(0x00)}, &instruction.GetLocal{Imm: uint32(0x01)}, &instruction.I32Add{}, &instruction.End{}},
 						},
 					},
 				},

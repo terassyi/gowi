@@ -167,39 +167,51 @@ const (
 	F64_COPYSIGN Opcode = 0xa6
 
 	// Conversions
-	I32_WRAP_I64        Opcode = 0xa7
-	I32_TRUNC_S_F32     Opcode = 0xa8
-	I32_TRUNC_U_F32     Opcode = 0xa9
-	I32_TRUNC_S_F64     Opcode = 0xaa
-	I32_TRUNC_U_F64     Opcode = 0xab
-	I64_EXTEND_S_I32    Opcode = 0xac
-	I64_EXTEND_U_I32    Opcode = 0xad
-	I64_TRUNC_S_F32     Opcode = 0xae
-	I64_TRUNC_U_F32     Opcode = 0xaf
-	I64_TRUNC_S_F64     Opcode = 0xb0
-	I64_TRUNC_U_F64     Opcode = 0xb1
-	F32_CONVERT_S_I32   Opcode = 0xb2
-	F32_CONVERT_U_I32   Opcode = 0xb3
-	F32_CONVERT_S_I64   Opcode = 0xb4
-	F32_CONVERT_U_I64   Opcode = 0xb5
-	F32_DEMOTE_F64      Opcode = 0xb6
-	F64_CONVERT_S_I32   Opcode = 0xb7
-	F64_CONVERT_U_I32   Opcode = 0xb8
-	F64_CONVERT_S_I64   Opcode = 0xb9
-	F64_CONVERT_U_I64   Opcode = 0xba
-	F64_PROMOTE_F32     Opcode = 0xbb
-	I32_TRUNC_SAT_F32_S Opcode = 0xfc // 0x00
-	I32_TRUNC_SAT_F32_U Opcode = 0xfc // 0x01
-	I32_TRUNC_SAT_F64_S Opcode = 0xfc // 0x02
-	I32_TRUNC_SAT_F64_U Opcode = 0xfc // 0x03
-	I64_TRUNC_SAT_F32_S Opcode = 0xfc // 0x04
-	I64_TRUNC_SAT_F32_U Opcode = 0xfc // 0x05
-	I64_TRUNC_SAT_F64_S Opcode = 0xfc // 0x06
-	I64_TRUNC_SAT_F64_U Opcode = 0xfc // 0x07
+	I32_WRAP_I64      Opcode = 0xa7
+	I32_TRUNC_S_F32   Opcode = 0xa8
+	I32_TRUNC_U_F32   Opcode = 0xa9
+	I32_TRUNC_S_F64   Opcode = 0xaa
+	I32_TRUNC_U_F64   Opcode = 0xab
+	I64_EXTEND_S_I32  Opcode = 0xac
+	I64_EXTEND_U_I32  Opcode = 0xad
+	I64_TRUNC_S_F32   Opcode = 0xae
+	I64_TRUNC_U_F32   Opcode = 0xaf
+	I64_TRUNC_S_F64   Opcode = 0xb0
+	I64_TRUNC_U_F64   Opcode = 0xb1
+	F32_CONVERT_S_I32 Opcode = 0xb2
+	F32_CONVERT_U_I32 Opcode = 0xb3
+	F32_CONVERT_S_I64 Opcode = 0xb4
+	F32_CONVERT_U_I64 Opcode = 0xb5
+	F32_DEMOTE_F64    Opcode = 0xb6
+	F64_CONVERT_S_I32 Opcode = 0xb7
+	F64_CONVERT_U_I32 Opcode = 0xb8
+	F64_CONVERT_S_I64 Opcode = 0xb9
+	F64_CONVERT_U_I64 Opcode = 0xba
+	F64_PROMOTE_F32   Opcode = 0xbb
+	TRUNC_SAT         Opcode = 0xfc
+	// I32_TRUNC_SAT_F32_S Opcode = 0xfc // 0x00
+	// I32_TRUNC_SAT_F32_U Opcode = 0xfc // 0x01
+	// I32_TRUNC_SAT_F64_S Opcode = 0xfc // 0x02
+	// I32_TRUNC_SAT_F64_U Opcode = 0xfc // 0x03
+	// I64_TRUNC_SAT_F32_S Opcode = 0xfc // 0x04
+	// I64_TRUNC_SAT_F32_U Opcode = 0xfc // 0x05
+	// I64_TRUNC_SAT_F64_S Opcode = 0xfc // 0x06
+	// I64_TRUNC_SAT_F64_U Opcode = 0xfc // 0x07
 
 	// Reinterpretations
 	I32_REINTERPRET_F32 Opcode = 0xbc
 	I64_REINTERPRET_F64 Opcode = 0xbd
 	F32_REINTERPRET_I32 Opcode = 0xbe
 	F64_REINTERPRET_I64 Opcode = 0xbf
+)
+
+const (
+	I32_TRUNC_SAT_F32_S uint8 = 0x00
+	I32_TRUNC_SAT_F32_U uint8 = 0x01
+	I32_TRUNC_SAT_F64_S uint8 = 0x02
+	I32_TRUNC_SAT_F64_U uint8 = 0x03
+	I64_TRUNC_SAT_F32_S uint8 = 0x04
+	I64_TRUNC_SAT_F32_U uint8 = 0x05
+	I64_TRUNC_SAT_F64_S uint8 = 0x06
+	I64_TRUNC_SAT_F64_U uint8 = 0x07
 )

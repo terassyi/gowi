@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/terassyi/gowi/instruction"
 	"github.com/terassyi/gowi/types"
 )
 
@@ -16,7 +17,7 @@ type FunctionBody struct {
 	// BodySize   uint32
 	// LocalCount uint32
 	Locals []*LocalEntry
-	Code   []byte
+	Code   []instruction.Instruction
 }
 
 type LocalEntry struct {
@@ -64,9 +65,18 @@ func newFunctionBody(buf *bytes.Buffer) (*FunctionBody, error) {
 	if err != nil {
 		return nil, fmt.Errorf("newFunctionBody: decode code: %w", err)
 	}
+	codeBuf := bytes.NewBuffer(code)
+	codes := make([]instruction.Instruction, 0, 1024)
+	for codeBuf.Len() > 0 {
+		c, err := instruction.Decode(codeBuf)
+		if err != nil {
+			return nil, fmt.Errorf("newFunctionBody: decode instruction: %w", err)
+		}
+		codes = append(codes, c)
+	}
 	return &FunctionBody{
 		Locals: locals,
-		Code:   code,
+		Code:   codes,
 	}, nil
 }
 
