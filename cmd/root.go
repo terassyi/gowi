@@ -18,6 +18,8 @@ var (
 
 func init() {
 	dumpCommand.Flags().BoolP("section", "s", false, "Show sections in WASM file.")
+	dumpCommand.Flags().BoolP("raw", "r", false, "Show raw binary.")
+	dumpCommand.Flags().BoolP("detail", "x", false, "Show section details.")
 	rootCmd.AddCommand(dumpCommand)
 }
 

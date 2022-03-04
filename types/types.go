@@ -72,6 +72,15 @@ type BlockType ValueType
 
 type ElemType ValueType // now only allowed anyfunc
 
+func (e ElemType) String() string {
+	switch e {
+	case ElemType(ANYFUNC):
+		return "funcref"
+	default:
+		return "unknown"
+	}
+}
+
 type FuncType struct {
 	Params  []ValueType
 	Returns []ValueType
@@ -195,6 +204,21 @@ func NewExternalKind(val uint8) (ExternalKind, error) {
 		return EXTERNAL_KIND_GLOBAL, nil
 	default:
 		return 0xff, fmt.Errorf("%w: %x", InvalidExternalKind, val)
+	}
+}
+
+func (k ExternalKind) String() string {
+	switch k {
+	case EXTERNAL_KIND_FUNCTION:
+		return "func"
+	case EXTERNAL_KIND_TABLE:
+		return "table"
+	case EXTERNAL_KIND_MEMORY:
+		return "memory"
+	case EXTERNAL_KIND_GLOBAL:
+		return "global"
+	default:
+		return "unknown"
 	}
 }
 

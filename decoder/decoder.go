@@ -34,7 +34,7 @@ func New(path string) *Decoder {
 	}
 }
 
-func (d *Decoder) Decode() (any, error) {
+func (d *Decoder) Decode() (*module.Module, error) {
 	m, err := decode(d.path)
 	if err != nil {
 		return nil, err
@@ -227,4 +227,8 @@ func decodeVersion(buf *bytes.Buffer) (uint32, error) {
 		return 0, fmt.Errorf("decodeVersion: read: %w", err)
 	}
 	return binary.LittleEndian.Uint32(b), nil
+}
+
+func HexDump(file string) ([]byte, error) {
+	return readWasmFile(file)
 }

@@ -102,3 +102,11 @@ func newLocalEntry(buf *bytes.Buffer) (*LocalEntry, error) {
 func (*Code) Code() SectionCode {
 	return CODE
 }
+
+func (c *Code) Detail() string {
+	str := fmt.Sprintf("%s[%d]:\n", c.Code(), len(c.Bodies))
+	for i := 0; i < len(c.Bodies); i++ {
+		str += fmt.Sprintf(" - func[%d] instruction size=%d\n", i, len(c.Bodies[i].Code))
+	}
+	return str
+}

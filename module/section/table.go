@@ -34,3 +34,11 @@ func NewTable(payload []byte) (*Table, error) {
 func (*Table) Code() SectionCode {
 	return TABLE
 }
+
+func (t *Table) Detail() string {
+	str := fmt.Sprintf("%s[%d]:\n", t.Code(), len(t.Entries))
+	for i := 0; i < len(t.Entries); i++ {
+		str += fmt.Sprintf(" - type[%d] type=%s initial=%d\n", i, t.Entries[i].ElementType, t.Entries[i].Limits.Initial)
+	}
+	return str
+}

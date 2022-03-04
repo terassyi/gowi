@@ -46,3 +46,27 @@ func NewType(payload []byte) (*Type, error) {
 func (*Type) Code() SectionCode {
 	return TYPE
 }
+
+func (t *Type) Detail() string {
+	str := fmt.Sprintf("%s[%d]:\n", t.Code(), len(t.Entries))
+	for i := 0; i < len(t.Entries); i++ {
+		params := "("
+		for j := 0; j < len(t.Entries[i].Params); j++ {
+			params += t.Entries[i].Params[j].String()
+			if j < len(t.Entries[i].Params)-1 {
+				params += ","
+			}
+		}
+		params += ")"
+		returns := "("
+		for j := 0; j < len(t.Entries[i].Returns); j++ {
+			returns += t.Entries[i].Returns[j].String()
+			if j < len(t.Entries[i].Returns)-1 {
+				returns += ","
+			}
+		}
+		returns += ")"
+		str += fmt.Sprintf(" - type[%d] %s -> %s\n", i, params, returns)
+	}
+	return str
+}

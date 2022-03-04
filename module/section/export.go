@@ -59,3 +59,11 @@ func NewExport(payload []byte) (*Export, error) {
 func (*Export) Code() SectionCode {
 	return EXPORT
 }
+
+func (e *Export) Detail() string {
+	str := fmt.Sprintf("%s[%d]:\n", e.Code(), len(e.Entries))
+	for i := 0; i < len(e.Entries); i++ {
+		str += fmt.Sprintf(" - %s[%d] <%s> -> index=%d\n", e.Entries[i].Kind, i, e.Entries[i].FieldString, e.Entries[i].Index)
+	}
+	return str
+}

@@ -95,3 +95,11 @@ func NewImport(payload []byte) (*Import, error) {
 func (*Import) Code() SectionCode {
 	return IMPORT
 }
+
+func (i *Import) Detail() string {
+	str := fmt.Sprintf("Import[%d]:\n", len(i.Entries))
+	for j := 0; j < len(i.Entries); j++ {
+		str += fmt.Sprintf(" - %s <%s.%s>\n", i.Entries[j].Kind, i.Entries[j].ModuleName, i.Entries[j].FieldString)
+	}
+	return str
+}

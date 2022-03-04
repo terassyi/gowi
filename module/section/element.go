@@ -61,3 +61,35 @@ func NewElement(payload []byte) (*Element, error) {
 func (*Element) Code() SectionCode {
 	return ELEMENT
 }
+
+func (e *Element) Detail() (string, error) {
+	str := fmt.Sprintf("%s[%d]:\n", e.Code(), len(e.Entries))
+	for i := 0; i < len(e.Entries); i++ {
+		switch e.Entries[i].Offset[0] {
+		case 0x41:
+			init := "i32"
+			iv, _, err := types.DecodeVarInt32(bytes.NewBuffer(e.Entries[i].Offset[1:]))
+			if err != nil {
+				return str, err
+			}
+			str += fmt.Sprintf(" - segment[%d] flags=%d table=%d count=%d - init %s=%d\n", i, 0, e.Entries[i].Index, len(e.Entries[i].Elems), init, iv)
+		case 0x42:
+			init := "i64"
+			iv, _, err := types.DecodeVarInt64(bytes.NewBuffer(e.Entries[i].Offset[1:]))
+			if err != nil {
+				return str, err
+			}
+			str += fmt.Sprintf(" - segment[%d] flags=%d table=%d count=%d - init %s=%d\n", i, 0, e.Entries[i].Index, len(e.Entries[i].Elems), init, iv)
+		case 0x43:
+			init := "f32"
+			str += fmt.Sprintf(" - segment[%d] flags=%d table=%d count=%d - init %s=%v\n", i, 0, e.Entries[i].Index, len(e.Entries[i].Elems), init, e.Entries[i].Offset[1:])
+		case 0x44:
+			init := "f64"
+			str += fmt.Sprintf(" - segment[%d] flags=%d table=%d count=%d - init %s=%v\n", i, 0, e.Entries[i].Index, len(e.Entries[i].Elems), init, e.Entries[i].Offset[1:])
+		}
+		for j := 0; j < len(e.Entries[i].Elems); j++ {
+			str += fmt.Sprintf("  - elem[%d] = func[%d]\n", j, e.Entries[i].Elems[j])
+		}
+	}
+	return str, nil
+}

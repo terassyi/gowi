@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"encoding/hex"
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/terassyi/gowi/decoder"
@@ -14,14 +15,40 @@ var dumpCommand = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		file := args[0]
-		r, err := cmd.Flags().GetBool("section")
+		d := decoder.New(file)
+		m, err := d.Decode()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatalln(err)
 		}
-		if err := dump(file, r); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		fmt.Printf("WASM file: %s\n\n", file)
+		r, err := cmd.Flags().GetBool("raw")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if r {
+			b, err := decoder.HexDump(file)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			fmt.Println(hex.Dump(b))
+		}
+		s, err := cmd.Flags().GetBool("section")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		x, err := cmd.Flags().GetBool("detail")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if s && !x {
+			fmt.Println(m.Dump())
+		}
+		if x {
+			d, err := m.DumpDetail()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			fmt.Println(d)
 		}
 	},
 }

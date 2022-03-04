@@ -58,3 +58,19 @@ func NewData(payload []byte) (*Data, error) {
 func (*Data) Code() SectionCode {
 	return DATA
 }
+
+func (d *Data) Detail() (string, error) {
+	str := fmt.Sprintf("%s[%d]:\n", d.Code(), len(d.Entries))
+	for i := 0; i < len(d.Entries); i++ {
+		if d.Entries[i].Offset[0] != 0x41 {
+			return "", fmt.Errorf("Data Detail: invalid init_expr.")
+		}
+		init := "i32"
+		iv, _, err := types.DecodeVarInt32(bytes.NewBuffer(d.Entries[i].Offset[1:]))
+		if err != nil {
+			return str, err
+		}
+		str += fmt.Sprintf(" - segment[%d] memory=%d size=%d init %s=%d\n  - %07x: %v\n", i, d.Entries[i].Index, d.Entries[i].Size, init, iv, iv, d.Entries[i].Data)
+	}
+	return str, nil
+}

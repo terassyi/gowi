@@ -25,3 +25,7 @@ func NewStart(payload []byte) (*Start, error) {
 func (*Start) Code() SectionCode {
 	return START
 }
+
+func (s *Start) Detail() string {
+	return fmt.Sprintf("%s:\n- start function: %d", s.Code(), s.Index)
+}

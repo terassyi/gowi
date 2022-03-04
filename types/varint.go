@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -149,4 +150,20 @@ func readByte(r io.Reader) (byte, error) {
 		return 0, err
 	}
 	return b[0], nil
+}
+
+func DecodeUint32(r io.Reader) (uint32, error) {
+	b := make([]byte, 4)
+	if _, err := r.Read(b); err != nil {
+		return 0, err
+	}
+	return binary.LittleEndian.Uint32(b), nil
+}
+
+func DecodeUint64(r io.Reader) (uint64, error) {
+	b := make([]byte, 8)
+	if _, err := r.Read(b); err != nil {
+		return 0, err
+	}
+	return binary.LittleEndian.Uint64(b), nil
 }

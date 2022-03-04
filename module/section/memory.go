@@ -34,3 +34,11 @@ func NewMemory(payload []byte) (*Memory, error) {
 func (*Memory) Code() SectionCode {
 	return MEMORY
 }
+
+func (m *Memory) Detail() string {
+	str := fmt.Sprintf("%s[%d]:\n", m.Code(), len(m.Entries))
+	for i := 0; i < len(m.Entries); i++ {
+		str += fmt.Sprintf(" - memory[%d] pages: initial=%d\n", i, m.Entries[i].Limits.Initial)
+	}
+	return str
+}

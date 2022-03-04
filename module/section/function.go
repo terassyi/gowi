@@ -33,3 +33,11 @@ func NewFunction(payload []byte) (*Function, error) {
 func (*Function) Code() SectionCode {
 	return FUNCTION
 }
+
+func (f *Function) Detail() string {
+	str := fmt.Sprintf("%s[%d]:\n", f.Code(), len(f.Types))
+	for i := 0; i < len(f.Types); i++ {
+		str += fmt.Sprintf(" - func[%d] sig=%d\n", i, f.Types[i])
+	}
+	return str
+}
