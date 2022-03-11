@@ -1,0 +1,125 @@
+package decoder
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/terassyi/gowi/instruction"
+	"github.com/terassyi/gowi/structure"
+	"github.com/terassyi/gowi/types"
+)
+
+type mod struct {
+	version  uint32
+	custom   *custom
+	typ      *typ
+	imports  *imports
+	function *function
+	table    *table
+	memory   *memory
+	global   *global
+	export   *export
+	start    *start
+	element  *element
+	code     *code
+	data     *data
+}
+
+func (m *mod) build() (*structure.Module, error) {
+	sm := &structure.Module{Version: m.version}
+	if m.typ != nil {
+		sm.Types = m.typ.entries
+	}
+	if m.function != nil {
+		sm.Functions = make([]*structure.Function, len(m.function.types))
+		for i, typ := range m.function.types {
+			f := &structure.Function{Type: typ}
+			f.Locals = make([]types.ValueType, len(m.code.bodies[i].locals))
+			for _, l := range m.code.bodies[i].locals {
+				f.Locals = append(f.Locals, l.typ)
+			}
+			f.Body = m.code.bodies[i].code
+			sm.Functions = append(sm.Functions, f)
+		}
+	}
+	if m.table != nil {
+		sm.Tables = make([]*structure.Table, len(m.table.entries))
+		for _, t := range m.table.entries {
+			sm.Tables = append(sm.Tables, &structure.Table{Type: t})
+		}
+	}
+	if m.memory != nil {
+		sm.Memories = make([]*structure.Memory, len(m.memory.entries))
+		for _, mem := range m.memory.entries {
+			sm.Memories = append(sm.Memories, &structure.Memory{Type: mem})
+		}
+	}
+	if m.global != nil {
+		sm.Global = make([]*structure.Global, len(m.global.globals))
+		for _, g := range m.global.globals {
+			instr, err := instruction.Decode(bytes.NewBuffer(g.init))
+			if err != nil {
+				return nil, fmt.Errorf("module build: global init expr: %w", err)
+			}
+			sm.Global = append(sm.Global, &structure.Global{Type: g.typ, Init: instr})
+		}
+	}
+	if m.element != nil {
+		sm.Elements = make([]*structure.Element, len(m.element.entries))
+		for _, e := range m.element.entries {
+			instr, err := instruction.Decode(bytes.NewBuffer(e.offset))
+			if err != nil {
+				return nil, fmt.Errorf("module build: element init expr: %w", err)
+			}
+			sm.Elements = append(sm.Elements, &structure.Element{
+				Type:       types.ElemTypeExternref,
+				TableIndex: e.index,
+				Offset:     instr,
+			})
+		}
+	}
+	if m.data != nil {
+		sm.Datas = make([]*structure.Data, len(m.data.entries))
+		for _, d := range m.data.entries {
+			instr, err := instruction.Decode(bytes.NewBuffer(d.offset))
+			if err != nil {
+				return nil, fmt.Errorf("module build: data init expr: %w", err)
+			}
+			sm.Datas = append(sm.Datas, &structure.Data{
+				Init:        d.data,
+				MemoryIndex: d.index,
+				Offset:      instr,
+			})
+		}
+	}
+	if m.start != nil {
+		sm.Start = &structure.Start{Index: m.start.index}
+	}
+	if m.imports != nil {
+		sm.Imports = make([]*structure.Import, len(m.imports.entries))
+		for _, i := range m.imports.entries {
+			desc, err := fromImportEntry(i.kind, i.typ)
+			if err != nil {
+				return nil, fmt.Errorf("module build: %w", err)
+			}
+			sm.Imports = append(sm.Imports, &structure.Import{
+				Module: string(i.moduleName),
+				Name:   string(i.fieldString),
+				Desc:   desc,
+			})
+		}
+	}
+	if m.export != nil {
+		sm.Exports = make([]*structure.Export, len(m.export.entries))
+		for _, e := range m.export.entries {
+			sm.Exports = append(sm.Exports, &structure.Export{
+				Name: string(e.fieldString),
+				Desc: &structure.ExportDesc{
+					Type: structure.DescType(e.kind),
+					Val:  e.index,
+				},
+			})
+		}
+	}
+	return sm, nil
+}

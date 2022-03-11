@@ -9,13 +9,17 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/terassyi/gowi/module"
-	"github.com/terassyi/gowi/module/section"
+	"github.com/terassyi/gowi/structure"
 	"github.com/terassyi/gowi/types"
 )
 
 const (
 	WASM_EXT string = ".wasm"
+)
+
+const (
+	MAJIC_NUMBER uint32 = 0x0061736d // \0asm
+	WASM_VERSION uint32 = 0x1
 )
 
 var (
@@ -26,23 +30,30 @@ var (
 
 type Decoder struct {
 	path string
+	mod  *mod
 }
 
-func New(path string) *Decoder {
+func New(path string) (*Decoder, error) {
+	m, err := decode(path)
+	if err != nil {
+		return nil, fmt.Errorf("Decoder new: %w", err)
+	}
 	return &Decoder{
 		path: path,
-	}
+		mod:  m,
+	}, nil
 }
 
-func (d *Decoder) Decode() (*module.Module, error) {
+func (d *Decoder) Decode() (*structure.Module, error) {
 	m, err := decode(d.path)
 	if err != nil {
 		return nil, err
 	}
-	return m, nil
+	d.mod = m
+	return m.build()
 }
 
-func decode(path string) (*module.Module, error) {
+func decode(path string) (*mod, error) {
 	data, err := readWasmFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
@@ -51,92 +62,92 @@ func decode(path string) (*module.Module, error) {
 	if err := validateMajicNumber(buf); err != nil {
 		return nil, fmt.Errorf("decode: majic_number: %w", err)
 	}
-	module := &module.Module{}
+	module := &mod{}
 	version, err := decodeVersion(buf)
 	if err != nil {
 		return nil, fmt.Errorf("decode: version: %w", err)
 	}
-	module.Version = version
+	module.version = version
 	for buf.Len() > 0 {
 		sd, err := newSectionDecoder(buf)
 		if err != nil {
 			return nil, fmt.Errorf("decode: %w", err)
 		}
 		switch sd.id {
-		case section.CUSTOM:
-			s, err := section.NewCustom(sd.payloadData)
+		case CUSTOM:
+			s, err := newCustom(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Custom = s
-		case section.TYPE:
-			s, err := section.NewType(sd.payloadData)
+			module.custom = s
+		case TYPE:
+			s, err := newType(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Type = s
-		case section.IMPORT:
-			s, err := section.NewImport(sd.payloadData)
+			module.typ = s
+		case IMPORT:
+			s, err := newImport(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Import = s
-		case section.FUNCTION:
-			s, err := section.NewFunction(sd.payloadData)
+			module.imports = s
+		case FUNCTION:
+			s, err := newFunction(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Function = s
-		case section.TABLE:
-			s, err := section.NewTable(sd.payloadData)
+			module.function = s
+		case TABLE:
+			s, err := newTable(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Table = s
-		case section.MEMORY:
-			s, err := section.NewMemory(sd.payloadData)
+			module.table = s
+		case MEMORY:
+			s, err := newMemory(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Memory = s
-		case section.GLOBAL:
-			s, err := section.NewGlobal(sd.payloadData)
+			module.memory = s
+		case GLOBAL:
+			s, err := newGlobal(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Global = s
-		case section.EXPORT:
-			s, err := section.NewExport(sd.payloadData)
+			module.global = s
+		case EXPORT:
+			s, err := newExport(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Export = s
-		case section.START:
-			s, err := section.NewStart(sd.payloadData)
+			module.export = s
+		case START:
+			s, err := newStart(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Start = s
-		case section.ELEMENT:
-			s, err := section.NewElement(sd.payloadData)
+			module.start = s
+		case ELEMENT:
+			s, err := newElement(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Element = s
-		case section.CODE:
-			s, err := section.NewCode(sd.payloadData)
+			module.element = s
+		case CODE:
+			s, err := newCode(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Code = s
-		case section.DATA:
-			s, err := section.NewData(sd.payloadData)
+			module.code = s
+		case DATA:
+			s, err := newData(sd.payloadData)
 			if err != nil {
 				return nil, fmt.Errorf("decode: %w", err)
 			}
-			module.Data = s
+			module.data = s
 		default:
-			return nil, section.InvalidSectionCode
+			return nil, InvalidSectionCode
 		}
 	}
 	return module, nil
@@ -166,7 +177,7 @@ func readWasmFile(path string) ([]byte, error) {
 }
 
 type sectionDecoder struct {
-	id            section.SectionCode // if custom section, id == 0
+	id            SectionCode // if custom section, id == 0
 	payloadLength uint32
 	nameLength    uint32 // present if id == 0;
 	name          []byte // present if id == 0
@@ -179,7 +190,7 @@ func newSectionDecoder(buf *bytes.Buffer) (*sectionDecoder, error) {
 	if err != nil {
 		return nil, fmt.Errorf("newSectionDecoder: decode id: %w", err)
 	}
-	sectionId, err := section.NewSectionCode(id)
+	sectionId, err := newSectionCode(id)
 	if err != nil {
 		return nil, fmt.Errorf("newSectionDecoder: decode id: %w", err)
 	}
@@ -215,7 +226,7 @@ func validateMajicNumber(buf *bytes.Buffer) error {
 		return fmt.Errorf("validateMajicNumber: read: %w", err)
 	}
 	majic := binary.BigEndian.Uint32(b)
-	if majic != module.MAJIC_NUMBER {
+	if majic != MAJIC_NUMBER {
 		return fmt.Errorf("validateMajicNumber: %w", InvalidMajicNumber)
 	}
 	return nil
@@ -231,4 +242,116 @@ func decodeVersion(buf *bytes.Buffer) (uint32, error) {
 
 func HexDump(file string) ([]byte, error) {
 	return readWasmFile(file)
+}
+
+func (d *Decoder) dumpVersion() string {
+	return fmt.Sprintf("%s: file format wasm 0x%x\n", d.path, d.mod.version)
+}
+
+func (d *Decoder) DumpSection() string {
+	str := d.dumpVersion()
+	str += "Sections:\n\n"
+	if d.mod.custom != nil {
+		str += fmt.Sprintf("Custom is not implemented.\n")
+	}
+	if d.mod.typ != nil {
+		str += fmt.Sprintf("Type : count=0x%04x\n", len(d.mod.typ.entries))
+	}
+	if d.mod.imports != nil {
+		str += fmt.Sprintf("Import: count 0x%04x\n", len(d.mod.imports.entries))
+	}
+	if d.mod.function != nil {
+		str += fmt.Sprintf("Function : count=0x%04x\n", len(d.mod.function.types))
+	}
+	if d.mod.table != nil {
+		str += fmt.Sprintf("Table : count 0x%04x\n", len(d.mod.table.entries))
+	}
+	if d.mod.memory != nil {
+		str += fmt.Sprintf("Memory : count 0x%04x\n", len(d.mod.memory.entries))
+	}
+	if d.mod.global != nil {
+		str += fmt.Sprintf("Global : count 0x%04x\n", len(d.mod.global.globals))
+	}
+	if d.mod.export != nil {
+		str += fmt.Sprintf("Export : count 0x%04x\n", len(d.mod.export.entries))
+	}
+	if d.mod.start != nil {
+		str += fmt.Sprintf("Start: index %d\n", d.mod.start.index)
+	}
+	if d.mod.element != nil {
+		str += fmt.Sprintf("Element : count 0x%04x\n", len(d.mod.element.entries))
+	}
+	if d.mod.code != nil {
+		str += fmt.Sprintf("Code : count 0x%04x\n", len(d.mod.code.bodies))
+	}
+	if d.mod.data != nil {
+		str += fmt.Sprintf("Data : count 0x%04x\n", len(d.mod.data.entries))
+	}
+	return str
+}
+
+func (d *Decoder) DumpDetail() (string, error) {
+	str := d.dumpVersion()
+	str += "Section Details:\n\n"
+	if d.mod.custom != nil {
+		str += d.mod.custom.detail()
+		str += "\n"
+	}
+	if d.mod.typ != nil {
+		str += d.mod.typ.detail()
+		str += "\n"
+	}
+	if d.mod.imports != nil {
+		str += d.mod.imports.detail()
+		str += "\n"
+	}
+	if d.mod.function != nil {
+		str += d.mod.function.detail()
+		str += "\n"
+	}
+	if d.mod.table != nil {
+		str += d.mod.table.detail()
+		str += "\n"
+	}
+	if d.mod.memory != nil {
+		str += d.mod.memory.detail()
+		str += "\n"
+	}
+	if d.mod.global != nil {
+		s, err := d.mod.global.detail()
+		if err != nil {
+			return "", err
+		}
+		str += s
+		str += "\n"
+	}
+	if d.mod.export != nil {
+		str += d.mod.export.detail()
+		str += "\n"
+	}
+	if d.mod.start != nil {
+		str += d.mod.start.detail()
+		str += "\n"
+	}
+	if d.mod.element != nil {
+		s, err := d.mod.element.detail()
+		if err != nil {
+			return "", err
+		}
+		str += s
+		str += "\n"
+	}
+	if d.mod.code != nil {
+		str += d.mod.code.detail()
+		str += "\n"
+	}
+	if d.mod.data != nil {
+		s, err := d.mod.data.detail()
+		if err != nil {
+			return "", err
+		}
+		str += s
+		str += "\n"
+	}
+	return str, nil
 }
