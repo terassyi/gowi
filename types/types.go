@@ -72,6 +72,11 @@ type BlockType ValueType
 
 type ElemType ValueType // now only allowed anyfunc
 
+const (
+	ElemTypeFuncref   ElemType = 0
+	ElemTypeExternref ElemType = 1
+)
+
 func (e ElemType) String() string {
 	switch e {
 	case ElemType(ANYFUNC):
@@ -82,8 +87,8 @@ func (e ElemType) String() string {
 }
 
 type FuncType struct {
-	Params  []ValueType
-	Returns []ValueType
+	Params  ResultType
+	Returns ResultType
 }
 
 func DecodeFuncType(payload []byte) (*FuncType, int, error) {
@@ -150,7 +155,7 @@ func NewGloablType(buf *bytes.Buffer) (*GlobalType, error) {
 
 type TableType struct {
 	ElementType ElemType
-	Limits      *ResizableLimits
+	Limits      *Limits
 }
 
 func NewTableType(buf *bytes.Buffer) (*TableType, error) {
@@ -161,26 +166,26 @@ func NewTableType(buf *bytes.Buffer) (*TableType, error) {
 	if elm != VarUint32(ANYFUNC) {
 		return nil, fmt.Errorf("%w: only allowed anyfunc: %x", NotImplemented, elm)
 	}
-	r, err := NewResizableLimits(buf)
+	l, err := NewLimits(buf)
 	if err != nil {
 		return nil, fmt.Errorf("NewTableType: decoder resizable_limits: %w", err)
 	}
 	return &TableType{
 		ElementType: ElemType(elm),
-		Limits:      r,
+		Limits:      l,
 	}, nil
 }
 
 type MemoryType struct {
-	Limits *ResizableLimits
+	Limits *Limits
 }
 
 func NewMemoryType(buf *bytes.Buffer) (*MemoryType, error) {
-	r, err := NewResizableLimits(buf)
+	l, err := NewLimits(buf)
 	if err != nil {
 		return nil, fmt.Errorf("NewMemoryType: decoder resizable_limits: %w", err)
 	}
-	return &MemoryType{Limits: r}, nil
+	return &MemoryType{Limits: l}, nil
 }
 
 type ExternalKind uint8
@@ -250,4 +255,49 @@ func NewResizableLimits(buf *bytes.Buffer) (*ResizableLimits, error) {
 		limits.Max = uint32(b)
 	}
 	return limits, nil
+}
+
+type Limits struct {
+	Min uint32
+	Max uint32 // optional, if max is not set, Max = 0
+}
+
+func NewLimits(buf *bytes.Buffer) (*Limits, error) {
+	limits := &Limits{}
+	b, err := buf.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("NewResizableLimits: decode flag: %w", err)
+	}
+	flag := false
+	if b == 1 {
+		flag = true
+	}
+	b, err = buf.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("NewResizableLimits: decode init: %w", err)
+	}
+	limits.Min = uint32(b)
+	if flag {
+		b, err := buf.ReadByte()
+		if err != nil {
+			return nil, fmt.Errorf("NewResizableLimits: decode max: %w", err)
+		}
+		limits.Max = uint32(b)
+	} else {
+		limits.Max = 0
+	}
+	return limits, nil
+}
+
+type ResultType []ValueType
+
+type ReferenceType uint32
+
+const (
+	RefTypeFunc   ReferenceType = 0x70
+	RefTypeExtern ReferenceType = 0x6f
+)
+
+type ImportDescTypeSet interface {
+	uint32 | *FuncType | *TableType | *MemoryType | *GlobalType
 }

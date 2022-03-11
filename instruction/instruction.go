@@ -174,10 +174,30 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	// case I64_STORE32:
 	// case CURRENT_MEMORY:
 	// case GROW_MEMORY:
-	// case I32_CONST:
-	// case I64_CONST:
-	// case F32_CONST:
-	// case F64_CONST:
+	case I32_CONST:
+		imm, _, err := types.DecodeVarInt32(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32_const) decode: %w", err)
+		}
+		return &I32Const{Imm: int32(imm)}, nil
+	case I64_CONST:
+		imm, _, err := types.DecodeVarInt64(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64_const) decode: %w", err)
+		}
+		return &I64Const{Imm: int64(imm)}, nil
+	case F32_CONST:
+		imm, err := types.DecodeUint32(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32_const) decode: %w", err)
+		}
+		return &F32Const{Imm: imm}, nil
+	case F64_CONST:
+		imm, err := types.DecodeUint64(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32_const) decode: %w", err)
+		}
+		return &F64Const{Imm: imm}, nil
 	// case I32_EQZ:
 	// case I32_EQ:
 	// case I32_NE:

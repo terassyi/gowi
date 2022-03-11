@@ -15,8 +15,7 @@ var dumpCommand = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		file := args[0]
-		d := decoder.New(file)
-		m, err := d.Decode()
+		d, err := decoder.New(file)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -41,23 +40,14 @@ var dumpCommand = &cobra.Command{
 			log.Fatalln(err)
 		}
 		if s && !x {
-			fmt.Println(m.Dump())
+			fmt.Println(d.DumpSection())
 		}
 		if x {
-			d, err := m.DumpDetail()
+			detail, err := d.DumpDetail()
 			if err != nil {
 				log.Fatalln(err)
 			}
-			fmt.Println(d)
+			fmt.Println(detail)
 		}
 	},
-}
-
-func dump(file string, sections bool) error {
-	d := decoder.New(file)
-	_, err := d.Decode()
-	if err != nil {
-		return err
-	}
-	return nil
 }
