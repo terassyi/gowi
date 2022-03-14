@@ -11,7 +11,7 @@ type Module struct {
 	Functions []*Function
 	Tables    []*Table
 	Memories  []*Memory
-	Global    []*Global
+	Globals   []*Global
 	Elements  []*Element
 	Datas     []*Data
 	Start     *Start
@@ -20,9 +20,10 @@ type Module struct {
 }
 
 type Function struct {
-	Type   uint32 // typeidx
-	Locals []types.ValueType
-	Body   []instruction.Instruction
+	Type     uint32 // typeidx
+	Locals   []types.ValueType
+	Body     []instruction.Instruction
+	Imported bool
 }
 
 type Table struct {

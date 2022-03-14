@@ -12,6 +12,7 @@ var (
 	InvalidExternalKind error = errors.New("Invalid external kind value")
 	InvalidInitExpr     error = errors.New("Invalid init_expr")
 	NotImplemented      error = errors.New("Not implemented")
+	InvalidLimitsValue  error = errors.New("Invalid limits values")
 )
 
 type ValueType uint8
@@ -289,7 +290,23 @@ func NewLimits(buf *bytes.Buffer) (*Limits, error) {
 	return limits, nil
 }
 
+func (l *Limits) Validate() error {
+	if l.Max != 0 {
+		if l.Min > l.Max {
+			return fmt.Errorf("%w: max must be larger than min.", InvalidLimitsValue)
+		}
+	}
+	return nil
+}
+
 type ResultType []ValueType
+
+func (r ResultType) IsEmpty() bool {
+	if len(r) == 0 || r == nil {
+		return true
+	}
+	return false
+}
 
 type ReferenceType uint32
 

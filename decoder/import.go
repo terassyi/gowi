@@ -26,7 +26,7 @@ func fromImportEntry(kind types.ExternalKind, val any) (*structure.ImportDesc, e
 	case structure.DescTypeFunc:
 		return &structure.ImportDesc{
 			Type: structure.DescType(kind),
-			Func: val.(uint32),
+			Func: uint32(val.(types.VarUint32)),
 		}, nil
 	case structure.DescTypeTable:
 		return &structure.ImportDesc{

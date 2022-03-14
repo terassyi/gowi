@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	InvalidOpcode  error = errors.New("Invalid opcode")
-	NotImplemented error = errors.New("Not implemented")
+	InvalidOpcode       error = errors.New("Invalid opcode")
+	NotImplemented      error = errors.New("Not implemented")
+	NotConstInstruction error = errors.New("Not const instruction")
 )
 
 type Instruction interface {
@@ -70,7 +71,7 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Instruction(br_table) decode count: %w", err)
 		}
-		targets := make([]uint32, int(count))
+		targets := make([]uint32, 0, int(count))
 		for i := 0; i < int(count); i++ {
 			t, _, err := types.DecodeVarUint32(buf)
 			if err != nil {
@@ -327,5 +328,35 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	// case F64_REINTERPRET_I64:
 	default:
 		return nil, fmt.Errorf("%w: %x", NotImplemented, opcode)
+	}
+}
+
+func IsConst(instr Instruction) bool {
+	switch instr.Opcode() {
+	case I32_CONST:
+		return true
+	case I64_CONST:
+		return true
+	case F32_CONST:
+		return true
+	case F64_CONST:
+		return true
+	default:
+		return false
+	}
+}
+
+func GetConstType(instr Instruction) (types.ValueType, error) {
+	switch instr.Opcode() {
+	case I32_CONST:
+		return types.I32, nil
+	case I64_CONST:
+		return types.I64, nil
+	case F32_CONST:
+		return types.F32, nil
+	case F64_CONST:
+		return types.F64, nil
+	default:
+		return types.ValueType(0xff), NotConstInstruction
 	}
 }
