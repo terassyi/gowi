@@ -23,9 +23,12 @@ func TestValidate(t *testing.T) {
 		{path: "../examples/local1.wasm", res: true},
 		{path: "../examples/mem0.wasm", res: true},
 		{path: "../examples/table.wasm", res: true},
+		{path: "../examples/start0.wasm", res: true},
 		// {path: "../examples/shared0.wasm", res: true},
 		// {path: "../examples/shared1.wasm", res: true},
 		{path: "../examples/import_js.wasm", res: true},
+		// I should prepare invalid wasm file to pass test cases
+		// {path: "../examples/invalid_table.wasm", res: false},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)

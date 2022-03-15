@@ -34,8 +34,6 @@ func newContext(mod *structure.Module) (*context, error) {
 		ctx.functions = make([]*types.FuncType, 0, len(mod.Functions))
 		ctx.locals = make([]types.ValueType, 0)
 		for _, idx := range mod.Functions {
-			fmt.Println(mod.Types)
-			fmt.Println(idx)
 			ctx.functions = append(ctx.functions, mod.Types[idx.Type])
 			ctx.locals = append(ctx.locals, idx.Locals...)
 		}
@@ -80,7 +78,6 @@ func (c *context) reqiureFunc(index uint32) (*types.FuncType, error) {
 	if int(index) > len(c.functions) {
 		return nil, fmt.Errorf("function section index is not valid: %d", index)
 	}
-	fmt.Println(index)
 	return c.functions[index], nil
 }
 
