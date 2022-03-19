@@ -1,7 +1,13 @@
 package value
 
+import "math"
+
 type Number interface {
 	NumType() NumberType
+}
+
+type NumberTypeSet interface {
+	~int32 | ~int64 | ~float32 | ~float64
 }
 
 type Reference interface {
@@ -12,9 +18,6 @@ type Value interface {
 	ValType() ValueType
 }
 
-type ExternalVal interface {
-	ExValType() ExternValueType
-}
 type NumberType uint8
 
 const (
@@ -43,15 +46,6 @@ const (
 	ValTypeNum ValueType = 0
 	ValTypeVec ValueType = 1
 	ValTypeRef ValueType = 2
-)
-
-type ExternValueType uint8
-
-const (
-	ExternValTypeFunc   ExternValueType = 0
-	ExternValTypeTable  ExternValueType = 1
-	ExternValTypeMem    ExternValueType = 2
-	ExternValTypeGlobal ExternValueType = 3
 )
 
 type I32 int32
@@ -98,4 +92,16 @@ type Vector [16]byte // 128bit value
 
 func (Vector) ValType() ValueType {
 	return ValTypeVec
+}
+
+func Float32FromUint32(val uint32) float32 {
+	return math.Float32frombits(val)
+}
+
+func Float64FromUint64(val uint64) float64 {
+	return math.Float64frombits(val)
+}
+
+func GetNum[T NumberTypeSet](n Number) T {
+	return n.(T)
 }

@@ -16,7 +16,12 @@ var (
 
 type Instruction interface {
 	Opcode() Opcode
+	imm() any
 }
+
+type None struct{}
+
+var NoImm None = None{}
 
 func New(opcode uint8) (Instruction, error) {
 	return nil, nil
@@ -84,7 +89,7 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 			return nil, fmt.Errorf("Instruction(br_table) decode default: %w", err)
 		}
 		return &BrTable{
-			Imm: &BrTableImm{
+			Imm: BrTableImm{
 				TargetTable:   targets,
 				DefaultTarget: uint32(def),
 			},
@@ -111,7 +116,7 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 			reserved = true
 		}
 		return &CallIndirect{
-			Imm: &CallIndirectImm{
+			Imm: CallIndirectImm{
 				TypeIndex: uint32(index),
 				reserved:  reserved,
 			},
@@ -331,32 +336,6 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	}
 }
 
-func IsConst(instr Instruction) bool {
-	switch instr.Opcode() {
-	case I32_CONST:
-		return true
-	case I64_CONST:
-		return true
-	case F32_CONST:
-		return true
-	case F64_CONST:
-		return true
-	default:
-		return false
-	}
-}
-
-func GetConstType(instr Instruction) (types.ValueType, error) {
-	switch instr.Opcode() {
-	case I32_CONST:
-		return types.I32, nil
-	case I64_CONST:
-		return types.I64, nil
-	case F32_CONST:
-		return types.F32, nil
-	case F64_CONST:
-		return types.F64, nil
-	default:
-		return types.ValueType(0xff), NotConstInstruction
-	}
+func Imm[T any](instr Instruction) T {
+	return instr.imm().(T)
 }

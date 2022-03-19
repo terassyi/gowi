@@ -1,6 +1,8 @@
 package structure
 
 import (
+	"errors"
+
 	"github.com/terassyi/gowi/instruction"
 	"github.com/terassyi/gowi/types"
 )
@@ -45,6 +47,7 @@ type Element struct {
 	Type       types.ElemType
 	TableIndex uint32
 	Offset     instruction.Instruction
+	Init       []uint32 // function index
 }
 
 // https://webassembly.github.io/spec/core/syntax/modules.html#data-segments
@@ -91,6 +94,8 @@ const (
 	DescTypeMemory DescType = 2
 	DescTypeGlobal DescType = 3
 )
+
+var InvalidDesType error = errors.New("Invalid desc type")
 
 // func (m *Module) Dump() string {
 // 	str := fmt.Sprintf("WASM file format: %x\n\n", m.Version)

@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	InvalidValueType    error = errors.New("Invalid value type")
-	InvalidFuncType     error = errors.New("Invalid func type")
-	InvalidExternalKind error = errors.New("Invalid external kind value")
-	InvalidInitExpr     error = errors.New("Invalid init_expr")
-	NotImplemented      error = errors.New("Not implemented")
-	InvalidLimitsValue  error = errors.New("Invalid limits values")
+	InvalidValueType     error = errors.New("Invalid value type")
+	InvalidFuncType      error = errors.New("Invalid func type")
+	InvalidExternalKind  error = errors.New("Invalid external kind value")
+	InvalidInitExpr      error = errors.New("Invalid init_expr")
+	NotImplemented       error = errors.New("Not implemented")
+	InvalidLimitsValue   error = errors.New("Invalid limits values")
+	ImvalidReferenceType error = errors.New("Invalid reference type")
 )
 
 type ValueType uint8
@@ -314,6 +315,18 @@ const (
 	RefTypeFunc   ReferenceType = 0x70
 	RefTypeExtern ReferenceType = 0x6f
 )
+
+func ReferenceTypeFromElemType(elem ElemType) (ReferenceType, error) {
+	switch elem {
+	case ElemTypeFuncref:
+		return RefTypeFunc, nil
+	case ElemTypeExternref:
+		return RefTypeExtern, nil
+	default:
+		return ReferenceType(0), ImvalidReferenceType
+	}
+
+}
 
 type ImportDescTypeSet interface {
 	uint32 | *FuncType | *TableType | *MemoryType | *GlobalType

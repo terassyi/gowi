@@ -8,8 +8,12 @@ func (*Call) Opcode() Opcode {
 	return CALL
 }
 
+func (c *Call) imm() any {
+	return c.Imm
+}
+
 type CallIndirect struct {
-	Imm *CallIndirectImm
+	Imm CallIndirectImm
 }
 
 type CallIndirectImm struct {
@@ -19,4 +23,8 @@ type CallIndirectImm struct {
 
 func (*CallIndirect) Opcode() Opcode {
 	return CALL_INDIRECT
+}
+
+func (ci *CallIndirect) imm() any {
+	return ci.Imm
 }

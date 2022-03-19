@@ -99,9 +99,10 @@ func (m *mod) build() (*structure.Module, error) {
 				return nil, fmt.Errorf("module build: element init expr: %w", err)
 			}
 			sm.Elements = append(sm.Elements, &structure.Element{
-				Type:       types.ElemTypeExternref,
+				Type:       types.ElemTypeFuncref,
 				TableIndex: e.index,
 				Offset:     instr,
+				Init:       e.elems,
 			})
 		}
 	}
