@@ -21,21 +21,21 @@ func TestTableGrow(t *testing.T) {
 			table:  &Table{Type: &types.TableType{Limits: &types.Limits{Min: 2}}, Elems: make([]value.Reference, 2)},
 			offset: 0,
 			elems:  []uint32{0, 1},
-			funcs:  []*Function{&Function{}, &Function{}},
+			funcs:  []*Function{{}, {}},
 			exp:    []value.Reference{&Function{}, &Function{}},
 		},
 		{
 			table:  &Table{Type: &types.TableType{Limits: &types.Limits{Min: 2}}, Elems: make([]value.Reference, 2)},
 			offset: 0,
 			elems:  []uint32{0, 1, 2},
-			funcs:  []*Function{&Function{}, &Function{}, &Function{}},
+			funcs:  []*Function{{}, {}, {}},
 			exp:    []value.Reference{&Function{}, &Function{}, &Function{}},
 		},
 		{
 			table:  &Table{Type: &types.TableType{Limits: &types.Limits{Min: 2, Max: 3}}, Elems: make([]value.Reference, 2)},
 			offset: 0,
 			elems:  []uint32{0, 1, 2},
-			funcs:  []*Function{&Function{}, &Function{}, &Function{}},
+			funcs:  []*Function{{}, {}, {}},
 			exp:    []value.Reference{&Function{}, &Function{}, &Function{}},
 		},
 	} {
@@ -57,7 +57,7 @@ func TestTableGrow_Fail(t *testing.T) {
 			table:  &Table{Type: &types.TableType{Limits: &types.Limits{Min: 2, Max: 3}}, Elems: make([]value.Reference, 2)},
 			offset: 0,
 			elems:  []uint32{0, 1, 2, 3},
-			funcs:  []*Function{&Function{}, &Function{}, &Function{}, &Function{}},
+			funcs:  []*Function{{}, {}, {}, {}},
 			exp:    []value.Reference{&Function{}, &Function{}, &Function{}},
 		},
 	} {

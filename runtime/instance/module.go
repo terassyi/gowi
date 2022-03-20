@@ -41,7 +41,7 @@ func New(mod *structure.Module) (*Module, error) {
 		if err != nil {
 			return nil, fmt.Errorf("New module instance: %w", err)
 		}
-		if err := mem.grow(GetVal[int32](offset), d.Init); err != nil {
+		if err := mem.initData(GetVal[int32](offset), d.Init); err != nil {
 			return nil, fmt.Errorf("New module instance: %w", err)
 		}
 	}
