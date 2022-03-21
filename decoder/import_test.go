@@ -92,7 +92,7 @@ func TestNewImport(t *testing.T) {
 						fieldString:      []byte{0x74, 0x61, 0x62, 0x6c, 0x65},
 						kind:             types.EXTERNAL_KIND_TABLE,
 						typ: &types.TableType{
-							ElementType: types.ElemType(types.ANYFUNC),
+							ElementType: types.ElemTypeFuncref,
 							Limits: &types.Limits{
 								Min: uint32(0x01),
 								Max: uint32(0x00),

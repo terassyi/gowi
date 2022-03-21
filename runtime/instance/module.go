@@ -3,6 +3,7 @@ package instance
 import (
 	"fmt"
 
+	"github.com/terassyi/gowi/runtime/value"
 	"github.com/terassyi/gowi/structure"
 	"github.com/terassyi/gowi/types"
 )
@@ -31,7 +32,7 @@ func New(mod *structure.Module) (*Module, error) {
 		if err != nil {
 			return nil, fmt.Errorf("New module instance: %w", err)
 		}
-		if err := table.grow(e.Type, GetVal[int32](offset), e.Init, m.FuncAddrs); err != nil {
+		if err := table.grow(e.Type, int32(GetVal[value.I32](offset)), e.Init, m.FuncAddrs); err != nil {
 			return nil, fmt.Errorf("New module instance: %w", err)
 		}
 	}
@@ -41,7 +42,7 @@ func New(mod *structure.Module) (*Module, error) {
 		if err != nil {
 			return nil, fmt.Errorf("New module instance: %w", err)
 		}
-		if err := mem.initData(GetVal[int32](offset), d.Init); err != nil {
+		if err := mem.initData(int32(GetVal[value.I32](offset)), d.Init); err != nil {
 			return nil, fmt.Errorf("New module instance: %w", err)
 		}
 	}
@@ -54,4 +55,21 @@ func New(mod *structure.Module) (*Module, error) {
 		f.Module = m
 	}
 	return m, nil
+}
+
+func (m *Module) GetExports() []ExternalValue {
+	externalValues := make([]ExternalValue, 0, len(m.Exports))
+	for _, e := range m.Exports {
+		externalValues = append(externalValues, e.Value)
+	}
+	return externalValues
+}
+
+func (m *Module) GetExport(name string) (ExternalValue, error) {
+	for _, e := range m.Exports {
+		if e.Name == name {
+			return e.Value, nil
+		}
+	}
+	return nil, fmt.Errorf("Not found exported isntance")
 }

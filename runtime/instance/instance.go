@@ -38,23 +38,23 @@ func GetVal[T ValueTypeSet](v value.Value) T {
 	return v.(T)
 }
 
-type ExternValueType uint8
+type ExternalValueType uint8
 
 const (
-	ExternValTypeFunc   ExternValueType = 0
-	ExternValTypeTable  ExternValueType = 1
-	ExternValTypeMem    ExternValueType = 2
-	ExternValTypeGlobal ExternValueType = 3
+	ExternalValueTypeFunc   ExternalValueType = 0
+	ExternalValueTypeTable  ExternalValueType = 1
+	ExternalValueTypeMem    ExternalValueType = 2
+	ExternalValueTypeGlobal ExternalValueType = 3
 )
 
 type ExternalValue interface {
-	ExternalValueType() ExternValueType
+	ExternalValueType() ExternalValueType
 }
 
-type ExternValueTypeSet interface {
+type ExternalValueTypeSet interface {
 	*Function | *Table | *Memory | *Global
 }
 
-func GetExternVal[T ExternValueTypeSet](v ExternalValue) T {
+func GetExternVal[T ExternalValueTypeSet](v ExternalValue) T {
 	return v.(T)
 }

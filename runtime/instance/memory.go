@@ -27,8 +27,8 @@ func newMemories(mod *structure.Module) []*Memory {
 	return mems
 }
 
-func (*Memory) ExternalValueType() ExternValueType {
-	return ExternValTypeMem
+func (*Memory) ExternalValueType() ExternalValueType {
+	return ExternalValueTypeMem
 }
 
 // https://webassembly.github.io/spec/core/exec/modules.html#growing-memories

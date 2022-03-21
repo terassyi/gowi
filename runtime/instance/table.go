@@ -25,14 +25,14 @@ func newTables(mod *structure.Module) []*Table {
 	return tables
 }
 
-func (*Table) ExternalValueType() ExternValueType {
-	return ExternValTypeTable
+func (*Table) ExternalValueType() ExternalValueType {
+	return ExternalValueTypeTable
 }
 
 // https://webassembly.github.io/spec/core/exec/modules.html#growing-tables
 func (t *Table) grow(typ types.ElemType, offset int32, elems []uint32, funcs []*Function) error {
 	if t.Type.ElementType != typ {
-		return fmt.Errorf("grow table: type doesn't match")
+		return fmt.Errorf("grow table: type doesn't match ins=%s given=%s", t.Type.ElementType, typ)
 	}
 	if int(offset)+len(elems) > len(t.Elems) {
 		if t.Type.Limits.Max != 0 && int(offset)+len(elems) > int(t.Type.Limits.Max) {

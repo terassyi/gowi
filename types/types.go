@@ -9,6 +9,7 @@ import (
 var (
 	InvalidValueType     error = errors.New("Invalid value type")
 	InvalidFuncType      error = errors.New("Invalid func type")
+	InvalidElemType      error = errors.New("Invalid elem type")
 	InvalidExternalKind  error = errors.New("Invalid external kind value")
 	InvalidInitExpr      error = errors.New("Invalid init_expr")
 	NotImplemented       error = errors.New("Not implemented")
@@ -79,10 +80,24 @@ const (
 	ElemTypeExternref ElemType = 1
 )
 
+func NewElemType(val VarUint32) (ElemType, error) {
+	switch uint32(val) {
+	case uint32(ANYFUNC):
+		return ElemTypeFuncref, nil
+	case uint32(0x6f):
+		return ElemTypeExternref, nil
+	default:
+		return 0xff, InvalidElemType
+	}
+}
+
 func (e ElemType) String() string {
 	switch e {
-	case ElemType(ANYFUNC):
+	// case ElemType(ANYFUNC):
+	case ElemTypeFuncref:
 		return "funcref"
+	case ElemTypeExternref:
+		return "externref"
 	default:
 		return "unknown"
 	}
@@ -165,15 +180,16 @@ func NewTableType(buf *bytes.Buffer) (*TableType, error) {
 	if err != nil {
 		return nil, fmt.Errorf("NewTableType: decode elem: %w", err)
 	}
-	if elm != VarUint32(ANYFUNC) {
-		return nil, fmt.Errorf("%w: only allowed anyfunc: %x", NotImplemented, elm)
+	typ, err := NewElemType(elm)
+	if err != nil {
+		return nil, fmt.Errorf("NewTableType: %w", err)
 	}
 	l, err := NewLimits(buf)
 	if err != nil {
 		return nil, fmt.Errorf("NewTableType: decoder resizable_limits: %w", err)
 	}
 	return &TableType{
-		ElementType: ElemType(elm),
+		ElementType: typ,
 		Limits:      l,
 	}, nil
 }

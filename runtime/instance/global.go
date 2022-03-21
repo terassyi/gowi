@@ -28,6 +28,6 @@ func newGlobals(mod *structure.Module) ([]*Global, error) {
 	return globals, nil
 }
 
-func (*Global) ExternalValueType() ExternValueType {
-	return ExternValTypeGlobal
+func (*Global) ExternalValueType() ExternalValueType {
+	return ExternalValueTypeGlobal
 }

@@ -30,6 +30,6 @@ func (*Function) RefType() value.ReferenceType {
 	return value.RefTypeFunc
 }
 
-func (*Function) ExternalValueType() ExternValueType {
-	return ExternValTypeFunc
+func (*Function) ExternalValueType() ExternalValueType {
+	return ExternalValueTypeFunc
 }
