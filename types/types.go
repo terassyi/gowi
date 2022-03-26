@@ -71,6 +71,15 @@ func (v ValueType) String() string {
 	}
 }
 
+func (v ValueType) IsNumber() bool {
+	switch v {
+	case I32, I64, F32, F64:
+		return true
+	default:
+		return false
+	}
+}
+
 type BlockType ValueType
 
 type ElemType ValueType // now only allowed anyfunc

@@ -105,3 +105,26 @@ func Float64FromUint64(val uint64) float64 {
 func GetNum[T NumberTypeSet](n Number) T {
 	return n.(T)
 }
+
+type Result interface {
+	ResultType()
+}
+
+type ResultType uint8
+
+const (
+	ResultTypeValue ResultType = 0
+	ResultTypeTrap  ResultType = 1
+)
+
+type Trap struct {
+	error
+}
+
+type ResultTypeSet interface {
+	~int32 | ~int64 | ~float32 | ~float64 | Trap
+}
+
+func GetResult[T ResultTypeSet](r Result) T {
+	return r.(T)
+}
