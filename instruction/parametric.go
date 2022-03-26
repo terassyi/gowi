@@ -10,6 +10,10 @@ func (*Drop) imm() any {
 	return NoImm
 }
 
+func (*Drop) String() string {
+	return "drop"
+}
+
 type Select struct{}
 
 func (*Select) Opcode() Opcode {
@@ -18,4 +22,8 @@ func (*Select) Opcode() Opcode {
 
 func (*Select) imm() any {
 	return NoImm
+}
+
+func (*Select) String() string {
+	return "select"
 }

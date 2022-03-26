@@ -12,6 +12,10 @@ func (c *Call) imm() any {
 	return c.Imm
 }
 
+func (*Call) String() string {
+	return "call"
+}
+
 type CallIndirect struct {
 	Imm CallIndirectImm
 }
@@ -27,4 +31,8 @@ func (*CallIndirect) Opcode() Opcode {
 
 func (ci *CallIndirect) imm() any {
 	return ci.Imm
+}
+
+func (*CallIndirect) String() string {
+	return "call_indirect"
 }

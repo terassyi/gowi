@@ -14,6 +14,10 @@ func (i32c *I32Const) imm() any {
 	return i32c.Imm
 }
 
+func (*I32Const) String() string {
+	return "i32.const"
+}
+
 type I64Const struct {
 	Imm int64
 }
@@ -24,6 +28,10 @@ func (*I64Const) Opcode() Opcode {
 
 func (i64c *I64Const) imm() any {
 	return i64c.Imm
+}
+
+func (*I64Const) String() string {
+	return "i64.const"
 }
 
 type F32Const struct {
@@ -38,6 +46,10 @@ func (f32c *F32Const) imm() any {
 	return f32c.Imm
 }
 
+func (*F32Const) String() string {
+	return "f32.const"
+}
+
 type F64Const struct {
 	Imm uint64
 }
@@ -48,6 +60,10 @@ func (*F64Const) Opcode() Opcode {
 
 func (f64c *F64Const) imm() any {
 	return f64c.Imm
+}
+
+func (*F64Const) String() string {
+	return "f64.const"
 }
 
 func IsConst(instr Instruction) bool {

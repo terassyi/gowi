@@ -12,6 +12,10 @@ func (gl *GetLocal) imm() any {
 	return gl.Imm
 }
 
+func (*GetLocal) String() string {
+	return "get_local"
+}
+
 type SetLocal struct {
 	Imm uint32
 }
@@ -22,6 +26,10 @@ func (*SetLocal) Opcode() Opcode {
 
 func (sl *SetLocal) imm() any {
 	return sl.Imm
+}
+
+func (*SetLocal) String() string {
+	return "set_local"
 }
 
 type TeeLocal struct {
@@ -36,6 +44,10 @@ func (tl *TeeLocal) imm() any {
 	return tl.Imm
 }
 
+func (*TeeLocal) String() string {
+	return "tee_local"
+}
+
 type GetGlobal struct {
 	Imm uint32
 }
@@ -48,6 +60,10 @@ func (gg *GetGlobal) imm() any {
 	return gg.Imm
 }
 
+func (*GetGlobal) String() string {
+	return "get_global"
+}
+
 type SetGlobal struct {
 	Imm uint32
 }
@@ -58,4 +74,8 @@ func (*SetGlobal) Opcode() Opcode {
 
 func (sg *SetGlobal) imm() any {
 	return sg.Imm
+}
+
+func (*SetGlobal) String() string {
+	return "set_global"
 }

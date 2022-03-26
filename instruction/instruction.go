@@ -16,6 +16,7 @@ var (
 
 type Instruction interface {
 	Opcode() Opcode
+	String() string
 	imm() any
 }
 
