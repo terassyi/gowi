@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/terassyi/gowi/runtime/value"
+	"github.com/terassyi/gowi/types"
 )
 
 func TestValueStackPush(t *testing.T) {
@@ -54,5 +55,40 @@ func TestValueStackPop_Err(t *testing.T) {
 		}
 		_, err := d.s.Pop()
 		require.Error(t, err)
+	}
+}
+
+func TestValueStackValidate(t *testing.T) {
+	for _, d := range []struct {
+		stack *ValueStack
+		types []types.ValueType
+		exp   error
+	}{
+		{stack: &ValueStack{values: []value.Value{value.I32(0)}}, types: []types.ValueType{types.I32}, exp: nil},
+		{stack: &ValueStack{values: []value.Value{value.I32(0), value.I32(1), value.I32(2), value.I32(3)}}, types: []types.ValueType{types.I32, types.I32, types.I32}, exp: nil},
+		{stack: &ValueStack{values: []value.Value{value.I32(0), value.I64(1)}}, types: []types.ValueType{types.I64, types.I32}, exp: nil},
+		{stack: &ValueStack{values: []value.Value{value.I32(0), value.I64(1)}}, types: []types.ValueType{types.I32, types.I64}, exp: ValueStackTypeNotMatch},
+	} {
+		err := d.stack.Validate(d.types)
+		assert.Equal(t, d.exp, err)
+	}
+}
+
+func TestValueStackPopNRev(t *testing.T) {
+	for _, d := range []struct {
+		stack  *ValueStack
+		values []value.Value
+	}{
+		{stack: &ValueStack{values: []value.Value{value.I32(0)}}, values: []value.Value{value.I32(1), value.I32(2)}},
+		{stack: &ValueStack{values: []value.Value{value.I32(0), value.I32(1), value.I32(2), value.I32(3)}}, values: []value.Value{value.I32(0xff), value.F32(0.1)}},
+		{stack: &ValueStack{values: []value.Value{value.I32(0), value.I64(1)}}, values: []value.Value{}},
+	} {
+		for _, v := range d.values {
+			err := d.stack.Push(v)
+			require.NoError(t, err)
+		}
+		res, err := d.stack.PopNRev(len(d.values))
+		require.NoError(t, err)
+		assert.Equal(t, d.values, res)
 	}
 }

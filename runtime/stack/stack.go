@@ -7,6 +7,7 @@ import (
 	"github.com/terassyi/gowi/instruction"
 	"github.com/terassyi/gowi/runtime/instance"
 	"github.com/terassyi/gowi/runtime/value"
+	"github.com/terassyi/gowi/types"
 )
 
 const (
@@ -16,8 +17,9 @@ const (
 )
 
 var (
-	StackLimit   error = errors.New("Stack limit")
-	StackIsEmpty error = errors.New("Stack is empty")
+	StackLimit             error = errors.New("Stack limit")
+	StackIsEmpty           error = errors.New("Stack is empty")
+	ValueStackTypeNotMatch error = errors.New("Value type in the stack is not matched")
 )
 
 // https://webassembly.github.io/spec/core/exec/runtime.html#stack
@@ -33,6 +35,26 @@ func New() *Stack {
 		Frame: &FrameStack{frames: make([]Frame, 0, FRAME_STACK_LIMIT)},
 		Label: &LabelStack{labels: make([]Label, 0, LABEL_STACK_LIMIT)},
 	}
+}
+
+func WithValue(values []value.Value, frames []Frame, labels []Label) (*Stack, error) {
+	stack := New()
+	for _, v := range values {
+		if err := stack.Value.Push(v); err != nil {
+			return nil, err
+		}
+	}
+	for _, f := range frames {
+		if err := stack.Frame.Push(f); err != nil {
+			return nil, err
+		}
+	}
+	for _, l := range labels {
+		if err := stack.Label.Push(l); err != nil {
+			return nil, err
+		}
+	}
+	return stack, nil
 }
 
 type ValueStack struct {
@@ -52,11 +74,63 @@ func (vs *ValueStack) Pop() (value.Value, error) {
 	if len(vs.values) == 0 {
 		return nil, fmt.Errorf("value stack pop: %w", StackIsEmpty)
 	}
-	fmt.Println(len(vs.values))
 	val := vs.values[len(vs.values)-1]
 	vs.values = vs.values[:len(vs.values)-1]
-	fmt.Println(len(vs.values))
 	return val, nil
+}
+
+func (vs *ValueStack) Validate(ts []types.ValueType) error {
+	for i, t := range ts {
+		val := vs.values[len(vs.values)-i-1]
+		if val.ValType() == value.ValTypeNum {
+			if !val.(value.Number).ValidateValueType(t) {
+				return ValueStackTypeNotMatch
+			}
+		} else if val.ValType() == value.ValTypeVec {
+			if t != types.V128 {
+				return ValueStackTypeNotMatch
+			}
+		} else {
+			return ValueStackTypeNotMatch
+		}
+	}
+	return nil
+}
+
+func (vs *ValueStack) PopN(n int) ([]value.Value, error) {
+	values := make([]value.Value, 0, n)
+	for i := 0; i < n; i++ {
+		v, err := vs.Pop()
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, v)
+	}
+	return values, nil
+}
+
+func (vs *ValueStack) PopNRev(n int) ([]value.Value, error) {
+	values := make([]value.Value, n)
+	for i := 0; i < n; i++ {
+		v, err := vs.Pop()
+		if err != nil {
+			return nil, err
+		}
+		values[n-i-1] = v
+	}
+	return values, nil
+}
+
+func (vs *ValueStack) RefNRev(n int) ([]value.Value, error) {
+	if len(vs.values) < n {
+		return nil, StackIsEmpty
+	}
+	values := make([]value.Value, n)
+	for i := 0; i < n; i++ {
+		v := vs.values[len(vs.values)-i-1]
+		values[n-i-1] = v
+	}
+	return values, nil
 }
 
 type FrameStack struct {
@@ -80,6 +154,13 @@ func (fs *FrameStack) Pop() (*Frame, error) {
 	return &f, nil
 }
 
+func (fs *FrameStack) Top() (*Frame, error) {
+	if len(fs.frames) == 0 {
+		return nil, fmt.Errorf("frame stack top: %w", StackIsEmpty)
+	}
+	return &fs.frames[len(fs.frames)-1], nil
+}
+
 type LabelStack struct {
 	labels []Label
 }
@@ -101,9 +182,16 @@ func (ls *LabelStack) Pop() (*Label, error) {
 	return &l, nil
 }
 
+func (ls *LabelStack) Top() (*Label, error) {
+	if len(ls.labels) == 0 {
+		return nil, fmt.Errorf("label stack Top: %w", StackIsEmpty)
+	}
+	return &ls.labels[len(ls.labels)-1], nil
+}
+
 type Label struct {
 	Instructions []instruction.Instruction
-	n            uint8
+	N            uint8
 }
 
 type Frame struct {

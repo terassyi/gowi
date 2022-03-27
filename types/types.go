@@ -24,6 +24,7 @@ const (
 	I64     ValueType = 0x7e
 	F32     ValueType = 0x7d
 	F64     ValueType = 0x7c
+	V128    ValueType = 0x7b
 	ANYFUNC ValueType = 0x70
 	FUNC    ValueType = 0x60
 	EMPTY   ValueType = 0x40
@@ -39,6 +40,8 @@ func NewValueType(v uint8) (ValueType, error) {
 		return F32, nil
 	case 0x7c:
 		return F64, nil
+	case 0x7b:
+		return V128, nil
 	case 0x70:
 		return ANYFUNC, nil
 	case 0x60:
@@ -60,6 +63,8 @@ func (v ValueType) String() string {
 		return "f32"
 	case F64:
 		return "f64"
+	case V128:
+		return "v128"
 	case ANYFUNC:
 		return "anyfunc"
 	case FUNC:
