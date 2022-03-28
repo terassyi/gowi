@@ -59,29 +59,62 @@ func TestStep(t *testing.T) {
 		instr       instruction.Instruction
 		exp         any
 		expStack    *stack.Stack
+		expCur      *current
 	}{
 		{
-			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{}, []stack.Frame{}, []stack.Label{})},
+			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{}, []stack.Frame{}, []stack.Label{}), cur: nil},
 			instr:       &instruction.I32Const{Imm: 0},
 			exp:         nil,
 			expStack:    stackWithValueIgnoreError([]value.Value{value.I32(0)}, []stack.Frame{}, []stack.Label{}),
+			expCur:      nil,
 		},
 		{
 			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{}, []stack.Frame{}, []stack.Label{}), cur: &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(0.1)}}}},
 			instr:       &instruction.GetLocal{Imm: 0},
 			exp:         nil,
 			expStack:    stackWithValueIgnoreError([]value.Value{value.I32(0)}, []stack.Frame{}, []stack.Label{}),
+			expCur:      &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(0.1)}}},
 		},
 		{
 			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{}, []stack.Frame{}, []stack.Label{}), cur: &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(0.1)}}}},
 			instr:       &instruction.GetLocal{Imm: 1},
 			exp:         nil,
 			expStack:    stackWithValueIgnoreError([]value.Value{value.F64(0.1)}, []stack.Frame{}, []stack.Label{}),
+			expCur:      &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(0.1)}}},
+		},
+		{
+			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{value.F64(1.5)}, []stack.Frame{}, []stack.Label{}), cur: &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(0.1)}}}},
+			instr:       &instruction.SetLocal{Imm: 1},
+			exp:         nil,
+			expStack:    stackWithValueIgnoreError([]value.Value{}, []stack.Frame{}, []stack.Label{}),
+			expCur:      &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(1.5)}}, label: nil},
+		},
+		{
+			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{value.F64(9.0)}, []stack.Frame{}, []stack.Label{}), cur: &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(0.1)}}}},
+			instr:       &instruction.TeeLocal{Imm: 1},
+			exp:         nil,
+			expStack:    stackWithValueIgnoreError([]value.Value{value.F64(9.0)}, []stack.Frame{}, []stack.Label{}),
+			expCur:      &current{frame: &stack.Frame{Module: nil, Locals: []value.Value{value.I32(0), value.F64(9.0)}}, label: nil},
+		},
+		{
+			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{value.I32(0xf0)}, []stack.Frame{}, []stack.Label{}), cur: nil},
+			instr:       &instruction.Drop{},
+			exp:         nil,
+			expStack:    stackWithValueIgnoreError([]value.Value{}, []stack.Frame{}, []stack.Label{}),
+			expCur:      nil,
+		},
+		{
+			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{value.I32(0xff), value.I32(0xee), value.I32(0x0)}, []stack.Frame{}, []stack.Label{}), cur: nil},
+			instr:       &instruction.Select{},
+			exp:         nil,
+			expStack:    stackWithValueIgnoreError([]value.Value{value.I32(0xee)}, []stack.Frame{}, []stack.Label{}),
+			expCur:      nil,
 		},
 	} {
 		err := d.interpreter.step(d.instr)
 		require.NoError(t, err)
 		assert.Equal(t, d.expStack, d.interpreter.stack)
+		assert.Equal(t, d.expCur, d.interpreter.cur)
 	}
 }
 

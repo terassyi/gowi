@@ -167,12 +167,22 @@ func (i *interpreter) finishInvoke(f *instance.Function) error {
 
 func (i *interpreter) step(instr instruction.Instruction) error {
 	switch instr.Opcode() {
+	case instruction.NOP:
+		return i.execNop(instr)
+	case instruction.UNREACHABLE:
+		return i.execUnreachable(instr)
+	case instruction.DROP:
+		return i.execDrop(instr)
+	case instruction.SELECT:
+		return i.execSelect(instr)
 	case instruction.I32_CONST, instruction.I64_CONST, instruction.F32_CONST, instruction.F64_CONST:
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:
 		return i.execLocal(instr, i.cur.frame)
 	case instruction.I32_ADD, instruction.I64_ADD, instruction.F32_ADD, instruction.F64_ADD:
 		return i.execBinop(instr)
+	case instruction.CALL:
+		return i.execCall(instr)
 	case instruction.END:
 		return i.labelEnd(instr)
 	default:

@@ -79,6 +79,13 @@ func (vs *ValueStack) Pop() (value.Value, error) {
 	return val, nil
 }
 
+func (vs *ValueStack) Top() (value.Value, error) {
+	if len(vs.values) == 0 {
+		return nil, fmt.Errorf("value stack pop: %w", StackIsEmpty)
+	}
+	return vs.values[len(vs.values)-1], nil
+}
+
 func (vs *ValueStack) Validate(ts []types.ValueType) error {
 	for i, t := range ts {
 		val := vs.values[len(vs.values)-i-1]
