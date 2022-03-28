@@ -11,10 +11,11 @@ import (
 type DebugLevel int
 
 const (
-	DebugLevelNoLog       DebugLevel = 0
-	DebugLevelLogOnly     DebugLevel = 1
-	DebugLevelShowContext DebugLevel = 2
-	DebugLevelInterrupt   DebugLevel = 3
+	DebugLevelNoLog         DebugLevel = 0
+	DebugLevelLogOnly       DebugLevel = 1
+	DebugLevelLogOnlyStdout DebugLevel = 2
+	DebugLevelShowContext   DebugLevel = 3
+	DebugLevelInterrupt     DebugLevel = 4
 )
 
 type Debugger struct {
@@ -23,7 +24,14 @@ type Debugger struct {
 }
 
 func New(level DebugLevel) *Debugger {
-	return &Debugger{level: level, writer: os.Stdout}
+	switch level {
+	case DebugLevelLogOnly:
+		return &Debugger{level: level, writer: os.Stderr}
+	case DebugLevelLogOnlyStdout:
+		return &Debugger{level: level, writer: os.Stdout}
+	default:
+		return &Debugger{level: level, writer: io.Discard}
+	}
 }
 
 func (d *Debugger) ShowResult(results []value.Value) {

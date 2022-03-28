@@ -38,6 +38,8 @@ func TestInvoke(t *testing.T) {
 	}{
 		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(0), value.I32(2)}, exp: nil},
 		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(13), value.I32(27)}, exp: nil},
+		{path: "../examples/call_func1.wasm", export: "getAnswerPlus1", args: []value.Value{}, exp: nil},
+		{path: "../examples/call_func_nested.wasm", export: "rootFunc", args: []value.Value{value.I32(1), value.I32(2)}, exp: nil},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)
@@ -46,7 +48,7 @@ func TestInvoke(t *testing.T) {
 		require.NoError(t, err)
 		_, err = v.Validate()
 		require.NoError(t, err)
-		ins, err := New(mod, nil, debugger.DebugLevelNoLog)
+		ins, err := New(mod, nil, debugger.DebugLevelLogOnlyStdout)
 		require.NoError(t, err)
 		err = ins.Invoke(d.export, d.args)
 		require.NoError(t, err)

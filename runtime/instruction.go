@@ -79,8 +79,9 @@ func (i *interpreter) execSelect(instruction.Instruction) error {
 func (i *interpreter) execCall(instr instruction.Instruction) error {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-call-x
 	index := instruction.Imm[uint32](instr)
-	fmt.Printf("function call index = %d", index)
-	return nil
+	fmt.Printf("function call index = %d\n", index)
+	f := i.cur.frame.Module.FuncAddrs[index]
+	return i.invokeFunction(f)
 }
 
 func (i *interpreter) execConst(instr instruction.Instruction) error {
