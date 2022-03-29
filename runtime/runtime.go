@@ -27,7 +27,7 @@ type interpreter struct {
 	instance *instance.Module
 	stack    *stack.Stack
 	debubber *debugger.Debugger
-	f        *instance.Function
+	f        *instance.Function // next function
 	cur      *current
 }
 
@@ -134,19 +134,30 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	return nil
 }
 
-func (i *interpreter) call() (value.Result, error) {
-	for _, instr := range i.f.Code.Body {
-		if err := i.step(instr); err != nil {
-			return nil, fmt.Errorf("Invocation call: %w", err)
-		}
-	}
-	return nil, nil
-}
-
 func (i *interpreter) execute() error {
 	for _, instr := range i.cur.label.Instructions {
-		if err := i.step(instr); err != nil {
+		res, err := i.step(instr)
+		if err != nil {
 			return fmt.Errorf("execute: %w", err)
+		}
+		switch res {
+		case instructionResultTrap:
+			return Trap
+		case instructionResultCallFunc:
+			if i.f == nil {
+				return fmt.Errorf("execute: called function is not found")
+			}
+			if err := i.invokeFunction(i.f); err != nil {
+				return fmt.Errorf("execute: %w", err)
+			}
+		case instructionResultReturn:
+		case instructionResultEnterBlock:
+		case instructionResultLabelEnd:
+			if i.isInvocationFinished() {
+				return nil
+			}
+		case instructionResultRunNext:
+			// go to next step
 		}
 	}
 	return nil
@@ -165,7 +176,18 @@ func (i *interpreter) finishInvoke(f *instance.Function) error {
 	return nil
 }
 
-func (i *interpreter) step(instr instruction.Instruction) error {
+func (i *interpreter) isInvocationFinished() bool {
+	if i.stack.Label.Len() > 1 || i.stack.Label.IsEmpty() {
+		return false
+	}
+	if i.stack.Frame.Len() == 1 {
+		fmt.Println("function invocation is finished.")
+		return true
+	}
+	return false
+}
+
+func (i *interpreter) step(instr instruction.Instruction) (instructionResult, error) {
 	switch instr.Opcode() {
 	case instruction.NOP:
 		return i.execNop(instr)
@@ -187,7 +209,7 @@ func (i *interpreter) step(instr instruction.Instruction) error {
 		return i.labelEnd(instr)
 	default:
 		// return instruction.InvalidOpcode
-		return nil
+		return instructionResultTrap, nil
 	}
 }
 
