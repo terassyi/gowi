@@ -22,100 +22,167 @@ var (
 	TrapUnreachable                    error = errors.New("trap: unreachable")
 )
 
-func (i *interpreter) labelEnd(instr instruction.Instruction) error {
+type instructionResult uint8
+
+const (
+	instructionResultRunNext    instructionResult = iota
+	instructionResultCallFunc   instructionResult = iota
+	instructionResultEnterBlock instructionResult = iota
+	instructionResultLabelEnd   instructionResult = iota
+	instructionResultReturn     instructionResult = iota
+	instructionResultTrap       instructionResult = iota
+)
+
+func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResult, error) {
+	fmt.Printf("%s: %x\n", instr, instruction.Imm[types.BlockType](instr))
+	funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	label, l, err := i.labelBlock(funcType)
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	i.cur.label.Sp += l
+	if err := i.stack.Label.Push(*label); err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	// push the dummy frame to frame stack
+	locals, err := i.stack.Value.PopNRev(len(funcType.Params))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	if err := i.stack.Frame.Push(stack.Frame{Locals: locals, Module: i.cur.frame.Module}); err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	return instructionResultEnterBlock, nil
+}
+
+func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, error) {
+	instrs := make([]instruction.Instruction, 0)
+	nest := 0
+	for sp := i.cur.label.Sp + 1; sp < len(i.cur.label.Instructions); sp++ {
+		instrs = append(instrs, i.cur.label.Instructions[sp])
+		if i.cur.label.Instructions[sp].Opcode() == instruction.BLOCK {
+			nest++
+		}
+		if i.cur.label.Instructions[sp].Opcode() == instruction.END {
+			nest--
+			if nest < 0 {
+				break
+			}
+		}
+	}
+	return &stack.Label{Instructions: instrs, N: uint8(len(funcType.Returns)), Sp: 0}, len(instrs), nil
+}
+
+func (i *interpreter) execLabelEnd(instr instruction.Instruction) (instructionResult, error) {
+	fmt.Println(instr.String())
 	if _, err := i.stack.Frame.Pop(); err != nil {
-		return fmt.Errorf("label end: %w", err)
+		return instructionResultTrap, fmt.Errorf("label end: %w", err)
 	}
 	if _, err := i.stack.Label.Pop(); err != nil {
-		return fmt.Errorf("label end: %w", err)
+		return instructionResultTrap, fmt.Errorf("label end: %w", err)
 	}
-	return i.cur.update(i.stack)
+	if err := i.cur.update(i.stack); err != nil {
+		return instructionResultTrap, fmt.Errorf("label end: %w", err)
+	}
+	return instructionResultLabelEnd, nil
 }
 
-func (i *interpreter) execDrop(instr instruction.Instruction) error {
+func (i *interpreter) execDrop(instr instruction.Instruction) (instructionResult, error) {
 	if _, err := i.stack.Value.Pop(); err != nil {
-		return fmt.Errorf("drop: %w", err)
+		return instructionResultTrap, fmt.Errorf("drop: %w", err)
 	}
-	return nil
+	return instructionResultRunNext, nil
 }
 
-func (i *interpreter) execNop(instr instruction.Instruction) error {
+func (i *interpreter) execNop(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-nop
-	return nil
+	fmt.Println(instr.String())
+	return instructionResultRunNext, nil
 }
 
-func (i *interpreter) execUnreachable(instr instruction.Instruction) error {
-	return TrapUnreachable
+func (i *interpreter) execUnreachable(instr instruction.Instruction) (instructionResult, error) {
+	return instructionResultTrap, TrapUnreachable
 }
 
-func (i *interpreter) execSelect(instruction.Instruction) error {
+func (i *interpreter) execSelect(instruction.Instruction) (instructionResult, error) {
 	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
-		return fmt.Errorf("select :%w", err)
+		return instructionResultTrap, fmt.Errorf("select :%w", err)
 	}
 	c, err := i.stack.Value.Pop()
 	if err != nil {
-		return fmt.Errorf("select: %w", err)
+		return instructionResultTrap, fmt.Errorf("select: %w", err)
 	}
 	val2, err := i.stack.Value.Pop()
 	if err != nil {
-		return fmt.Errorf("select: %w", err)
+		return instructionResultTrap, fmt.Errorf("select: %w", err)
 	}
 	val1, err := i.stack.Value.Pop()
 	if err != nil {
-		return fmt.Errorf("select: %w", err)
+		return instructionResultTrap, fmt.Errorf("select: %w", err)
 	}
 	if instance.GetVal[value.I32](c) != value.I32(0) {
 		if err := i.stack.Value.Push(val1); err != nil {
-			return fmt.Errorf("select: %w", err)
+			return instructionResultTrap, fmt.Errorf("select: %w", err)
 		}
 	} else {
 		if err := i.stack.Value.Push(val2); err != nil {
-			return fmt.Errorf("select: %w", err)
+			return instructionResultTrap, fmt.Errorf("select: %w", err)
 		}
 	}
-	return nil
+	return instructionResultRunNext, nil
 }
 
-func (i *interpreter) execCall(instr instruction.Instruction) error {
+func (i *interpreter) execCall(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-call-x
 	index := instruction.Imm[uint32](instr)
 	fmt.Printf("function call index = %d\n", index)
-	f := i.cur.frame.Module.FuncAddrs[index]
-	return i.invokeFunction(f)
+	i.f = i.cur.frame.Module.FuncAddrs[index]
+	// return i.invokeFunction(f)
+	return instructionResultCallFunc, nil
 }
 
-func (i *interpreter) execConst(instr instruction.Instruction) error {
+func (i *interpreter) execConst(instr instruction.Instruction) (instructionResult, error) {
 	fmt.Printf("%s(%v)\n", instr, instruction.Imm[int32](instr))
 	switch instr.Opcode() {
 	case instruction.I32_CONST:
 		imm := instruction.Imm[int32](instr)
 		if err := i.stack.Value.Push(value.I32(imm)); err != nil {
-			return nil
+			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
-		return nil
+		return instructionResultRunNext, nil
 	case instruction.I64_CONST:
-		return nil
+		return instructionResultRunNext, nil
 	case instruction.F32_CONST:
-		return nil
+		return instructionResultRunNext, nil
 	case instruction.F64_CONST:
-		return nil
+		return instructionResultRunNext, nil
 	default:
-		return ExcetutionErrorNotConstInstruction
+		return instructionResultTrap, ExcetutionErrorNotConstInstruction
 	}
 }
 
-func (i *interpreter) execLocal(instr instruction.Instruction, frame *stack.Frame) error {
+func (i *interpreter) execLocal(instr instruction.Instruction, frame *stack.Frame) (instructionResult, error) {
 	fmt.Printf("%s(%v)\n", instr, instruction.Imm[uint32](instr))
 	switch instr.Opcode() {
 	case instruction.GET_LOCAL:
-		return i.getLocal(instruction.Imm[uint32](instr), frame)
+		if err := i.getLocal(instruction.Imm[uint32](instr), frame); err != nil {
+			return instructionResultTrap, fmt.Errorf("get_local: %w", err)
+		}
 	case instruction.SET_LOCAL:
-		return i.setLocal(instruction.Imm[uint32](instr), frame)
+		if err := i.setLocal(instruction.Imm[uint32](instr), frame); err != nil {
+			return instructionResultTrap, fmt.Errorf("set_local: %w", err)
+		}
 	case instruction.TEE_LOCAL:
-		return i.teeLocal(instruction.Imm[uint32](instr), frame)
+		if err := i.teeLocal(instruction.Imm[uint32](instr), frame); err != nil {
+			return instructionResultTrap, fmt.Errorf("tee_local: %w", err)
+		}
 	default:
-		return ExecutionErrorNotLocalInstruction
+		return instructionResultTrap, ExecutionErrorNotLocalInstruction
 	}
+	return instructionResultRunNext, nil
 }
 
 func (i *interpreter) getLocal(index uint32, frame *stack.Frame) error {
@@ -191,18 +258,20 @@ func (i *interpreter) unop(valType value.NumberType, f unopFunc) error {
 	return nil
 }
 
-func (i *interpreter) execBinop(instr instruction.Instruction) error {
+func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResult, error) {
 	fmt.Println(instr.String())
 	switch instr.Opcode() {
 	case instruction.I32_ADD:
-		return i.binop(value.NumTypeI32, add)
+		if err := i.binop(value.NumTypeI32, add); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.I64_ADD:
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
-		return ExecutionErrorNotAddInstruction
+		return instructionResultTrap, ExecutionErrorNotAddInstruction
 	}
-	return nil
+	return instructionResultRunNext, nil
 }
 
 type binopFunc func(value.Number, value.Number) (value.Number, error)

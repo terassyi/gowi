@@ -86,6 +86,14 @@ func (vs *ValueStack) Top() (value.Value, error) {
 	return vs.values[len(vs.values)-1], nil
 }
 
+func (vs *ValueStack) Len() int {
+	return len(vs.values)
+}
+
+func (vs *ValueStack) IsEmpty() bool {
+	return len(vs.values) == 0
+}
+
 func (vs *ValueStack) Validate(ts []types.ValueType) error {
 	for i, t := range ts {
 		val := vs.values[len(vs.values)-i-1]
@@ -168,6 +176,14 @@ func (fs *FrameStack) Top() (*Frame, error) {
 	return &fs.frames[len(fs.frames)-1], nil
 }
 
+func (fs *FrameStack) Len() int {
+	return len(fs.frames)
+}
+
+func (fs *FrameStack) IsEmpty() bool {
+	return len(fs.frames) == 0
+}
+
 type LabelStack struct {
 	labels []Label
 }
@@ -196,9 +212,18 @@ func (ls *LabelStack) Top() (*Label, error) {
 	return &ls.labels[len(ls.labels)-1], nil
 }
 
+func (ls *LabelStack) Len() int {
+	return len(ls.labels)
+}
+
+func (ls *LabelStack) IsEmpty() bool {
+	return len(ls.labels) == 0
+}
+
 type Label struct {
 	Instructions []instruction.Instruction
 	N            uint8
+	Sp           int
 }
 
 type Frame struct {

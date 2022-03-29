@@ -34,12 +34,16 @@ func TestInvoke(t *testing.T) {
 		path   string
 		export string
 		args   []value.Value
-		exp    any
+		exp    []value.Value
 	}{
-		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(0), value.I32(2)}, exp: nil},
-		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(13), value.I32(27)}, exp: nil},
-		{path: "../examples/call_func1.wasm", export: "getAnswerPlus1", args: []value.Value{}, exp: nil},
-		{path: "../examples/call_func_nested.wasm", export: "rootFunc", args: []value.Value{value.I32(1), value.I32(2)}, exp: nil},
+		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(0), value.I32(2)}, exp: []value.Value{value.I32(2)}},
+		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(13), value.I32(27)}, exp: []value.Value{value.I32(40)}},
+		{path: "../examples/call_func1.wasm", export: "getAnswerPlus1", args: []value.Value{}, exp: []value.Value{value.I32(43)}},
+		{path: "../examples/call_func_nested.wasm", export: "rootFunc", args: []value.Value{value.I32(1), value.I32(2)}, exp: []value.Value{value.I32(6)}},
+		{path: "../examples/block.wasm", export: "singular", args: []value.Value{}, exp: []value.Value{value.I32(7)}},
+		{path: "../examples/block.wasm", export: "multi", args: []value.Value{}, exp: []value.Value{value.I32(8)}},
+		{path: "../examples/block.wasm", export: "nest", args: []value.Value{}, exp: []value.Value{value.I32(150)}},
+		{path: "../examples/block.wasm", export: "deep", args: []value.Value{}, exp: []value.Value{value.I32(150)}},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)
@@ -48,10 +52,17 @@ func TestInvoke(t *testing.T) {
 		require.NoError(t, err)
 		_, err = v.Validate()
 		require.NoError(t, err)
-		ins, err := New(mod, nil, debugger.DebugLevelLogOnlyStdout)
+		ins, err := instance.New(mod)
 		require.NoError(t, err)
-		err = ins.Invoke(d.export, d.args)
+		interpreter := &interpreter{
+			instance: ins,
+			stack:    stack.New(),
+			cur:      &current{},
+			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+		}
+		res, err := interpreter.Invoke(d.export, d.args)
 		require.NoError(t, err)
+		assert.Equal(t, d.exp, res)
 	}
 }
 
@@ -113,7 +124,7 @@ func TestStep(t *testing.T) {
 			expCur:      nil,
 		},
 	} {
-		err := d.interpreter.step(d.instr)
+		_, err := d.interpreter.step(d.instr)
 		require.NoError(t, err)
 		assert.Equal(t, d.expStack, d.interpreter.stack)
 		assert.Equal(t, d.expCur, d.interpreter.cur)

@@ -42,5 +42,5 @@ func (d *Debugger) ShowResult(results []value.Value) {
 			fmt.Fprintf(d.writer, ",")
 		}
 	}
-	fmt.Fprintf(d.writer, ")")
+	fmt.Fprintf(d.writer, ")\n")
 }

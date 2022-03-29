@@ -20,14 +20,15 @@ var (
 type ValueType uint8
 
 const (
-	I32     ValueType = 0x7f
-	I64     ValueType = 0x7e
-	F32     ValueType = 0x7d
-	F64     ValueType = 0x7c
-	V128    ValueType = 0x7b
-	ANYFUNC ValueType = 0x70
-	FUNC    ValueType = 0x60
-	EMPTY   ValueType = 0x40
+	I32       ValueType = 0x7f
+	I64       ValueType = 0x7e
+	F32       ValueType = 0x7d
+	F64       ValueType = 0x7c
+	V128      ValueType = 0x7b
+	ANYFUNC   ValueType = 0x70
+	FUNC      ValueType = 0x60
+	EMPTY     ValueType = 0x40
+	BLOCKTYPE ValueType = 0x40
 )
 
 func NewValueType(v uint8) (ValueType, error) {
