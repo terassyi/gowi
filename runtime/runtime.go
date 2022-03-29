@@ -21,7 +21,7 @@ var (
 )
 
 type Interpreter interface {
-	Invoke(string, []value.Value) error
+	Invoke(string, []value.Value) ([]value.Value, error)
 }
 
 type interpreter struct {
@@ -75,36 +75,40 @@ func New(mod *structure.Module, externalvals []instance.ExternalValue, debugLeve
 	}, nil
 }
 
-func (i *interpreter) Invoke(name string, locals []value.Value) error {
+func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, error) {
 	ext, err := i.instance.GetExport(name)
 	if err != nil {
-		return fmt.Errorf("Invoke: \n\t%w", err)
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	if ext.ExternalValueType() != instance.ExternalValueTypeFunc {
-		return fmt.Errorf("Invoke: \n\t%w", FunctionIsRequired)
+		return nil, fmt.Errorf("Invoke: \n\t%w", FunctionIsRequired)
 	}
 	f := instance.GetExternVal[*instance.Function](ext)
 	if err := validateLocals(f, locals); err != nil {
-		return fmt.Errorf("Invoke: \n\t%w", err)
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	if err := i.stack.Frame.Push(stack.Frame{Module: nil, Locals: nil}); err != nil {
-		return fmt.Errorf("Invoke: \n\t%w", err)
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	if err := i.stack.Label.Push(stack.Label{Instructions: nil, N: 0}); err != nil {
-		return fmt.Errorf("Invoke: \n\t%w", err)
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	for _, v := range locals {
 		if err := i.stack.Value.Push(v); err != nil {
-			return fmt.Errorf("Invoke: \n\t%w", err)
+			return nil, fmt.Errorf("Invoke: \n\t%w", err)
 		}
 	}
 	if err := i.invokeFunction(f); err != nil {
-		return fmt.Errorf("Invoke: \n\t%w", err)
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
-	if err := i.finishInvoke(f); err != nil {
-		return fmt.Errorf("Invoke: \n\t%w", err)
+	if err := i.execute(); err != nil {
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
-	return nil
+	res, err := i.finishInvoke(f)
+	if err != nil {
+		return nil, fmt.Errorf("Invoke: \n\t%w", err)
+	}
+	return res, nil
 }
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#invocation-of-function-address-a
@@ -121,7 +125,7 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	if err := i.stack.Frame.Push(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	if err := i.stack.Label.Push(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns))}); err != nil {
+	if err := i.stack.Label.Push(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// sync current frame and label with top of the stack
@@ -129,9 +133,6 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// execute function instruction
-	if err := i.execute(); err != nil {
-		return fmt.Errorf("Invoke function: %w", err)
-	}
 	return nil
 }
 
@@ -139,11 +140,14 @@ func (i *interpreter) execute() error {
 	for {
 		// frame := i.cur.frame
 		label := i.cur.label
-		for _, instr := range label.Instructions {
+		contexSwitch := false
+		for sp := label.Sp; sp < len(label.Instructions); sp++ {
+			instr := label.Instructions[sp]
 			res, err := i.step(instr)
 			if err != nil {
 				return fmt.Errorf("execute: %w", err)
 			}
+			label.Sp++
 			switch res {
 			case instructionResultTrap:
 				return Trap
@@ -154,55 +158,40 @@ func (i *interpreter) execute() error {
 				if err := i.invokeFunction(i.f); err != nil {
 					return fmt.Errorf("execute: %w", err)
 				}
+				contexSwitch = true
 			case instructionResultReturn:
 			case instructionResultEnterBlock:
+				if err := i.cur.update(i.stack); err != nil {
+					return fmt.Errorf("execute: %w", err)
+				}
+				contexSwitch = true
 			case instructionResultLabelEnd:
 				if i.isInvocationFinished() {
 					return nil
 				}
+				contexSwitch = true
 			case instructionResultRunNext:
 				// go to next step
 			}
+			if contexSwitch {
+				break
+			}
 		}
+		// fmt.Println("function context is changed.")
 	}
-	// for _, instr := range i.cur.label.Instructions {
-	// 	res, err := i.step(instr)
-	// 	if err != nil {
-	// 		return fmt.Errorf("execute: %w", err)
-	// 	}
-	// 	switch res {
-	// 	case instructionResultTrap:
-	// 		return Trap
-	// 	case instructionResultCallFunc:
-	// 		if i.f == nil {
-	// 			return fmt.Errorf("execute: called function is not found")
-	// 		}
-	// 		if err := i.invokeFunction(i.f); err != nil {
-	// 			return fmt.Errorf("execute: %w", err)
-	// 		}
-	// 	case instructionResultReturn:
-	// 	case instructionResultEnterBlock:
-	// 	case instructionResultLabelEnd:
-	// 		if i.isInvocationFinished() {
-	// 			return nil
-	// 		}
-	// 	case instructionResultRunNext:
-	// 		// go to next step
-	// 	}
-	// }
 }
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#returning-from-a-function
-func (i *interpreter) finishInvoke(f *instance.Function) error {
+func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) {
 	if err := i.stack.Value.Validate(f.Type.Returns); err != nil {
-		return fmt.Errorf("finish: %w", err)
+		return nil, fmt.Errorf("finish: %w", err)
 	}
 	values, err := i.stack.Value.PopNRev(len(f.Type.Returns))
 	if err != nil {
-		return fmt.Errorf("finish: %w", err)
+		return nil, fmt.Errorf("finish: %w", err)
 	}
 	i.debubber.ShowResult(values)
-	return nil
+	return values, nil
 }
 
 func (i *interpreter) isInvocationFinished() bool {
@@ -226,6 +215,8 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execDrop(instr)
 	case instruction.SELECT:
 		return i.execSelect(instr)
+	case instruction.BLOCK:
+		return i.execBlock(instr)
 	case instruction.I32_CONST, instruction.I64_CONST, instruction.F32_CONST, instruction.F64_CONST:
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:
@@ -240,6 +231,16 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		// return instruction.InvalidOpcode
 		return instructionResultTrap, nil
 	}
+}
+
+func (i *interpreter) restoreStack() error {
+	if _, err := i.stack.Frame.Pop(); err != nil {
+		return fmt.Errorf("restore: %w", err)
+	}
+	if _, err := i.stack.Label.Pop(); err != nil {
+		return fmt.Errorf("restore: %w", err)
+	}
+	return i.cur.update(i.stack)
 }
 
 func (i *interpreter) expand(block types.BlockType) (*types.FuncType, error) {

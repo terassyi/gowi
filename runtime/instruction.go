@@ -34,22 +34,50 @@ const (
 )
 
 func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResult, error) {
-	// funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
-	// if err != nil {
-	// 	return instructionResultTrap, fmt.Errorf("block: %w", err)
-	// }
+	fmt.Printf("%s: %x\n", instr, instruction.Imm[types.BlockType](instr))
+	funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	label, l, err := i.labelBlock(funcType)
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	i.cur.label.Sp += l
+	if err := i.stack.Label.Push(*label); err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	// push the dummy frame to frame stack
+	locals, err := i.stack.Value.PopNRev(len(funcType.Params))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
+	if err := i.stack.Frame.Push(stack.Frame{Locals: locals, Module: i.cur.frame.Module}); err != nil {
+		return instructionResultTrap, fmt.Errorf("block: %w", err)
+	}
 	return instructionResultEnterBlock, nil
 }
 
-func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, error) {
-	// instrs := make([]instruction.Instruction, 0)
-	// for _, instr := range i.cur.label.Instructions {
-
-	// }
-	return nil, nil
+func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, error) {
+	instrs := make([]instruction.Instruction, 0)
+	nest := 0
+	for sp := i.cur.label.Sp + 1; sp < len(i.cur.label.Instructions); sp++ {
+		instrs = append(instrs, i.cur.label.Instructions[sp])
+		if i.cur.label.Instructions[sp].Opcode() == instruction.BLOCK {
+			nest++
+		}
+		if i.cur.label.Instructions[sp].Opcode() == instruction.END {
+			nest--
+			if nest < 0 {
+				break
+			}
+		}
+	}
+	return &stack.Label{Instructions: instrs, N: uint8(len(funcType.Returns)), Sp: 0}, len(instrs), nil
 }
 
 func (i *interpreter) execLabelEnd(instr instruction.Instruction) (instructionResult, error) {
+	fmt.Println(instr.String())
 	if _, err := i.stack.Frame.Pop(); err != nil {
 		return instructionResultTrap, fmt.Errorf("label end: %w", err)
 	}
@@ -71,6 +99,7 @@ func (i *interpreter) execDrop(instr instruction.Instruction) (instructionResult
 
 func (i *interpreter) execNop(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-nop
+	fmt.Println(instr.String())
 	return instructionResultRunNext, nil
 }
 
