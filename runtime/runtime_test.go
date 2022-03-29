@@ -37,7 +37,7 @@ func TestInvoke(t *testing.T) {
 		exp    any
 	}{
 		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(0), value.I32(2)}, exp: nil},
-		// {path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(13), value.I32(27)}, exp: nil},
+		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(13), value.I32(27)}, exp: nil},
 		// {path: "../examples/call_func1.wasm", export: "getAnswerPlus1", args: []value.Value{}, exp: nil},
 		// {path: "../examples/call_func_nested.wasm", export: "rootFunc", args: []value.Value{value.I32(1), value.I32(2)}, exp: nil},
 	} {

@@ -223,6 +223,7 @@ func (ls *LabelStack) IsEmpty() bool {
 type Label struct {
 	Instructions []instruction.Instruction
 	N            uint8
+	Sp           int
 }
 
 type Frame struct {

@@ -10,6 +10,7 @@ import (
 	"github.com/terassyi/gowi/runtime/stack"
 	"github.com/terassyi/gowi/runtime/value"
 	"github.com/terassyi/gowi/structure"
+	"github.com/terassyi/gowi/types"
 	"github.com/terassyi/gowi/validator"
 )
 
@@ -135,32 +136,60 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 }
 
 func (i *interpreter) execute() error {
-	for _, instr := range i.cur.label.Instructions {
-		res, err := i.step(instr)
-		if err != nil {
-			return fmt.Errorf("execute: %w", err)
-		}
-		switch res {
-		case instructionResultTrap:
-			return Trap
-		case instructionResultCallFunc:
-			if i.f == nil {
-				return fmt.Errorf("execute: called function is not found")
-			}
-			if err := i.invokeFunction(i.f); err != nil {
+	for {
+		// frame := i.cur.frame
+		label := i.cur.label
+		for _, instr := range label.Instructions {
+			res, err := i.step(instr)
+			if err != nil {
 				return fmt.Errorf("execute: %w", err)
 			}
-		case instructionResultReturn:
-		case instructionResultEnterBlock:
-		case instructionResultLabelEnd:
-			if i.isInvocationFinished() {
-				return nil
+			switch res {
+			case instructionResultTrap:
+				return Trap
+			case instructionResultCallFunc:
+				if i.f == nil {
+					return fmt.Errorf("execute: called function is not found")
+				}
+				if err := i.invokeFunction(i.f); err != nil {
+					return fmt.Errorf("execute: %w", err)
+				}
+			case instructionResultReturn:
+			case instructionResultEnterBlock:
+			case instructionResultLabelEnd:
+				if i.isInvocationFinished() {
+					return nil
+				}
+			case instructionResultRunNext:
+				// go to next step
 			}
-		case instructionResultRunNext:
-			// go to next step
 		}
 	}
-	return nil
+	// for _, instr := range i.cur.label.Instructions {
+	// 	res, err := i.step(instr)
+	// 	if err != nil {
+	// 		return fmt.Errorf("execute: %w", err)
+	// 	}
+	// 	switch res {
+	// 	case instructionResultTrap:
+	// 		return Trap
+	// 	case instructionResultCallFunc:
+	// 		if i.f == nil {
+	// 			return fmt.Errorf("execute: called function is not found")
+	// 		}
+	// 		if err := i.invokeFunction(i.f); err != nil {
+	// 			return fmt.Errorf("execute: %w", err)
+	// 		}
+	// 	case instructionResultReturn:
+	// 	case instructionResultEnterBlock:
+	// 	case instructionResultLabelEnd:
+	// 		if i.isInvocationFinished() {
+	// 			return nil
+	// 		}
+	// 	case instructionResultRunNext:
+	// 		// go to next step
+	// 	}
+	// }
 }
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#returning-from-a-function
@@ -206,10 +235,24 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 	case instruction.CALL:
 		return i.execCall(instr)
 	case instruction.END:
-		return i.labelEnd(instr)
+		return i.execLabelEnd(instr)
 	default:
 		// return instruction.InvalidOpcode
 		return instructionResultTrap, nil
+	}
+}
+
+func (i *interpreter) expand(block types.BlockType) (*types.FuncType, error) {
+	switch types.ValueType(block) {
+	case types.I32, types.I64, types.F32, types.F64:
+		return &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.ValueType(block)}}, nil
+	case types.BLOCKTYPE:
+		return &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}}, nil
+	default:
+		if int(block) >= len(i.cur.frame.Module.Types) {
+			return nil, fmt.Errorf("expand: function type is not found")
+		}
+		return i.cur.frame.Module.Types[int(block)], nil
 	}
 }
 

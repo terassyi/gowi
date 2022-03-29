@@ -33,7 +33,23 @@ const (
 	instructionResultTrap       instructionResult = iota
 )
 
-func (i *interpreter) labelEnd(instr instruction.Instruction) (instructionResult, error) {
+func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResult, error) {
+	// funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
+	// if err != nil {
+	// 	return instructionResultTrap, fmt.Errorf("block: %w", err)
+	// }
+	return instructionResultEnterBlock, nil
+}
+
+func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, error) {
+	// instrs := make([]instruction.Instruction, 0)
+	// for _, instr := range i.cur.label.Instructions {
+
+	// }
+	return nil, nil
+}
+
+func (i *interpreter) execLabelEnd(instr instruction.Instruction) (instructionResult, error) {
 	if _, err := i.stack.Frame.Pop(); err != nil {
 		return instructionResultTrap, fmt.Errorf("label end: %w", err)
 	}
