@@ -44,6 +44,10 @@ func TestInvoke(t *testing.T) {
 		{path: "../examples/block.wasm", export: "multi", args: []value.Value{}, exp: []value.Value{value.I32(8)}},
 		{path: "../examples/block.wasm", export: "nest", args: []value.Value{}, exp: []value.Value{value.I32(150)}},
 		{path: "../examples/block.wasm", export: "deep", args: []value.Value{}, exp: []value.Value{value.I32(150)}},
+		{path: "../examples/loop.wasm", export: "singular", args: []value.Value{}, exp: []value.Value{value.I32(7)}},
+		{path: "../examples/loop.wasm", export: "multi", args: []value.Value{}, exp: []value.Value{value.I32(8)}},
+		{path: "../examples/loop.wasm", export: "nest", args: []value.Value{}, exp: []value.Value{value.I32(9)}},
+		{path: "../examples/loop.wasm", export: "deep", args: []value.Value{}, exp: []value.Value{value.I32(150)}},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)

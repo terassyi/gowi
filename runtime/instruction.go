@@ -58,12 +58,39 @@ func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResul
 	return instructionResultEnterBlock, nil
 }
 
+func (i *interpreter) execLoop(instr instruction.Instruction) (instructionResult, error) {
+	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-loop-xref-syntax-instructions-syntax-blocktype-mathit-blocktype-xref-syntax-instructions-syntax-instr-mathit-instr-ast-xref-syntax-instructions-syntax-instr-control-mathsf-end
+	fmt.Printf("%s: %x\n", instr, instruction.Imm[types.BlockType](instr))
+	funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("loop: %w", err)
+	}
+	label, l, err := i.labelBlock(funcType)
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("loop: %w", err)
+	}
+	i.cur.label.Sp += l
+	if err := i.stack.Label.Push(*label); err != nil {
+		return instructionResultTrap, fmt.Errorf("loop: %w", err)
+	}
+	// push the dummy frame to frame stack
+	locals, err := i.stack.Value.PopNRev(len(funcType.Params))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("loop: %w", err)
+	}
+	if err := i.stack.Frame.Push(stack.Frame{Locals: locals, Module: i.cur.frame.Module}); err != nil {
+		return instructionResultTrap, fmt.Errorf("loop: %w", err)
+	}
+	return instructionResultEnterBlock, nil
+}
+
 func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, error) {
 	instrs := make([]instruction.Instruction, 0)
 	nest := 0
 	for sp := i.cur.label.Sp + 1; sp < len(i.cur.label.Instructions); sp++ {
 		instrs = append(instrs, i.cur.label.Instructions[sp])
-		if i.cur.label.Instructions[sp].Opcode() == instruction.BLOCK {
+		if i.cur.label.Instructions[sp].Opcode() == instruction.BLOCK ||
+			i.cur.label.Instructions[sp].Opcode() == instruction.LOOP {
 			nest++
 		}
 		if i.cur.label.Instructions[sp].Opcode() == instruction.END {

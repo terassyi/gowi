@@ -217,6 +217,8 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execSelect(instr)
 	case instruction.BLOCK:
 		return i.execBlock(instr)
+	case instruction.LOOP:
+		return i.execLoop(instr)
 	case instruction.I32_CONST, instruction.I64_CONST, instruction.F32_CONST, instruction.F64_CONST:
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:
