@@ -224,6 +224,7 @@ type Label struct {
 	Instructions []instruction.Instruction
 	N            uint8
 	Sp           int
+	Flag         bool
 }
 
 type Frame struct {

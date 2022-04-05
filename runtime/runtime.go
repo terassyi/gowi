@@ -35,20 +35,30 @@ type interpreter struct {
 type current struct {
 	frame *stack.Frame
 	label *stack.Label
-	read  int
 }
 
 func (c *current) update(s *stack.Stack) error {
-	frame, err := s.Frame.Top()
-	if err != nil {
-		return err
+	if err := c.updateLabel(s); err != nil {
+		return fmt.Errorf("update: %w", err)
 	}
-	c.frame = frame
+	return c.updateFrame(s)
+}
+
+func (c *current) updateLabel(s *stack.Stack) error {
 	label, err := s.Label.Top()
 	if err != nil {
 		return err
 	}
 	c.label = label
+	return nil
+}
+
+func (c *current) updateFrame(s *stack.Stack) error {
+	frame, err := s.Frame.Top()
+	if err != nil {
+		return err
+	}
+	c.frame = frame
 	return nil
 }
 
@@ -125,7 +135,7 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	if err := i.stack.Frame.Push(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	if err := i.stack.Label.Push(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0}); err != nil {
+	if err := i.stack.Label.Push(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Flag: true}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// sync current frame and label with top of the stack
@@ -199,6 +209,7 @@ func (i *interpreter) isInvocationFinished() bool {
 		return false
 	}
 	if i.stack.Frame.Len() == 1 {
+		// frame stack: dummy
 		fmt.Println("function invocation is finished.")
 		return true
 	}
@@ -219,6 +230,8 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execBlock(instr)
 	case instruction.LOOP:
 		return i.execLoop(instr)
+	case instruction.IF:
+		return i.execIf(instr)
 	case instruction.I32_CONST, instruction.I64_CONST, instruction.F32_CONST, instruction.F64_CONST:
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:
@@ -236,11 +249,14 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 }
 
 func (i *interpreter) restoreStack() error {
-	if _, err := i.stack.Frame.Pop(); err != nil {
+	label, err := i.stack.Label.Pop()
+	if err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	if _, err := i.stack.Label.Pop(); err != nil {
-		return fmt.Errorf("restore: %w", err)
+	if label.Flag {
+		if _, err := i.stack.Frame.Pop(); err != nil {
+			return fmt.Errorf("restore: %w", err)
+		}
 	}
 	return i.cur.update(i.stack)
 }

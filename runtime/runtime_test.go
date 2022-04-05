@@ -48,6 +48,17 @@ func TestInvoke(t *testing.T) {
 		{path: "../examples/loop.wasm", export: "multi", args: []value.Value{}, exp: []value.Value{value.I32(8)}},
 		{path: "../examples/loop.wasm", export: "nest", args: []value.Value{}, exp: []value.Value{value.I32(9)}},
 		{path: "../examples/loop.wasm", export: "deep", args: []value.Value{}, exp: []value.Value{value.I32(150)}},
+		{path: "../examples/if.wasm", export: "if_func", args: []value.Value{}, exp: []value.Value{}},
+		{path: "../examples/if.wasm", export: "empty", args: []value.Value{value.I32(1)}, exp: []value.Value{}},
+		{path: "../examples/if.wasm", export: "empty", args: []value.Value{value.I32(0)}, exp: []value.Value{}},
+		{path: "../examples/if.wasm", export: "singular", args: []value.Value{value.I32(1)}, exp: []value.Value{value.I32(7)}},
+		{path: "../examples/if.wasm", export: "singular", args: []value.Value{value.I32(0)}, exp: []value.Value{value.I32(8)}},
+		{path: "../examples/if.wasm", export: "multi", args: []value.Value{value.I32(1)}, exp: []value.Value{value.I32(8), value.I32(1)}},
+		{path: "../examples/if.wasm", export: "multi", args: []value.Value{value.I32(0)}, exp: []value.Value{value.I32(9), value.I32(-1)}},
+		{path: "../examples/if.wasm", export: "nest", args: []value.Value{value.I32(1), value.I32(1)}, exp: []value.Value{value.I32(9)}},
+		{path: "../examples/if.wasm", export: "nest", args: []value.Value{value.I32(1), value.I32(0)}, exp: []value.Value{value.I32(10)}},
+		{path: "../examples/if.wasm", export: "nest", args: []value.Value{value.I32(0), value.I32(0)}, exp: []value.Value{value.I32(11)}},
+		{path: "../examples/if.wasm", export: "nest", args: []value.Value{value.I32(0), value.I32(1)}, exp: []value.Value{value.I32(10)}},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)
