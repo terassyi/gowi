@@ -164,7 +164,7 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 	}
 	fmt.Printf("[debug] stack frame pointer pop len: %d\n", l)
 	i.cur.label.Sp += l
-	val, err := i.stack.Value.Pop()
+	val, err := i.stack.PopValue()
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
@@ -184,6 +184,46 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
 	}
 	return instructionResultEnterBlock, nil
+}
+
+func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, error) {
+	labelIndex := instruction.Imm[uint32](instr)
+	fmt.Printf("%s label=%d\n", instr, labelIndex)
+	if i.stack.Label.Len() <= int(labelIndex) {
+		return instructionResultTrap, fmt.Errorf("br: the label stack must contain at least %d labels", labelIndex+1)
+	}
+	l, err := i.stack.Label.Ref(int(labelIndex))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	}
+	values, err := i.stack.PopValuesRev(int(l.N))
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	}
+	for j := 0; j < int(labelIndex)+1; j++ {
+		label, err := i.stack.Label.Top()
+		if err != nil {
+			return instructionResultTrap, fmt.Errorf("br: %w", err)
+		}
+		if _, err := i.stack.PopValues(int(label.ValCounter)); err != nil {
+			return instructionResultTrap, fmt.Errorf("br: %w", err)
+		}
+		if _, err := i.stack.Label.Pop(); err != nil {
+			return instructionResultTrap, fmt.Errorf("br: %w", err)
+		}
+	}
+	// if _, err := i.stack.Label.Pop(); err != nil {
+	// 	return instructionResultTrap, fmt.Errorf("br: %w", err)
+	// }
+	for _, v := range values {
+		if err := i.stack.PushValue(v); err != nil {
+			return instructionResultTrap, fmt.Errorf("br: %w", err)
+		}
+	}
+	if err := i.cur.update(i.stack); err != nil {
+		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	}
+	return instructionResultLabelEnd, nil
 }
 
 func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, error) {
@@ -274,7 +314,7 @@ func (i *interpreter) execLabelEnd(instr instruction.Instruction) (instructionRe
 }
 
 func (i *interpreter) execDrop(instr instruction.Instruction) (instructionResult, error) {
-	if _, err := i.stack.Value.Pop(); err != nil {
+	if _, err := i.stack.PopValue(); err != nil {
 		return instructionResultTrap, fmt.Errorf("drop: %w", err)
 	}
 	return instructionResultRunNext, nil
@@ -290,28 +330,29 @@ func (i *interpreter) execUnreachable(instr instruction.Instruction) (instructio
 	return instructionResultTrap, TrapUnreachable
 }
 
-func (i *interpreter) execSelect(instruction.Instruction) (instructionResult, error) {
+func (i *interpreter) execSelect(instr instruction.Instruction) (instructionResult, error) {
+	fmt.Println(instr)
 	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("select :%w", err)
 	}
-	c, err := i.stack.Value.Pop()
+	c, err := i.stack.PopValue()
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("select: %w", err)
 	}
-	val2, err := i.stack.Value.Pop()
+	val2, err := i.stack.PopValue()
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("select: %w", err)
 	}
-	val1, err := i.stack.Value.Pop()
+	val1, err := i.stack.PopValue()
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("select: %w", err)
 	}
 	if instance.GetVal[value.I32](c) != value.I32(0) {
-		if err := i.stack.Value.Push(val1); err != nil {
+		if err := i.stack.PushValue(val1); err != nil {
 			return instructionResultTrap, fmt.Errorf("select: %w", err)
 		}
 	} else {
-		if err := i.stack.Value.Push(val2); err != nil {
+		if err := i.stack.PushValue(val2); err != nil {
 			return instructionResultTrap, fmt.Errorf("select: %w", err)
 		}
 	}
@@ -332,7 +373,7 @@ func (i *interpreter) execConst(instr instruction.Instruction) (instructionResul
 	switch instr.Opcode() {
 	case instruction.I32_CONST:
 		imm := instruction.Imm[int32](instr)
-		if err := i.stack.Value.Push(value.I32(imm)); err != nil {
+		if err := i.stack.PushValue(value.I32(imm)); err != nil {
 			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
 		return instructionResultRunNext, nil
@@ -373,7 +414,7 @@ func (i *interpreter) getLocal(index uint32, frame *stack.Frame) error {
 	if int(index) >= len(frame.Locals) {
 		return ExecutionErrorLocalNotExist
 	}
-	if err := i.stack.Value.Push(frame.Locals[index]); err != nil {
+	if err := i.stack.PushValue(frame.Locals[index]); err != nil {
 		return err
 	}
 	return nil
@@ -384,7 +425,7 @@ func (i *interpreter) setLocal(index uint32, frame *stack.Frame) error {
 	if int(index) >= len(frame.Locals) {
 		return ExecutionErrorLocalNotExist
 	}
-	val, err := i.stack.Value.Pop()
+	val, err := i.stack.PopValue()
 	if err != nil {
 		return fmt.Errorf("set_local: %w", err)
 	}
@@ -397,14 +438,14 @@ func (i *interpreter) teeLocal(index uint32, frame *stack.Frame) error {
 	if int(index) >= len(frame.Locals) {
 		return ExecutionErrorLocalNotExist
 	}
-	val, err := i.stack.Value.Pop()
+	val, err := i.stack.PopValue()
 	if err != nil {
 		return fmt.Errorf("tee_local: %w", err)
 	}
-	if err := i.stack.Value.Push(val); err != nil {
+	if err := i.stack.PushValue(val); err != nil {
 		return fmt.Errorf("tee_local: %w", err)
 	}
-	if err := i.stack.Value.Push(val); err != nil {
+	if err := i.stack.PushValue(val); err != nil {
 		return fmt.Errorf("tee_local: %w", err)
 	}
 	return i.setLocal(index, frame)
@@ -427,7 +468,7 @@ func (i *interpreter) unop(valType value.NumberType, f unopFunc) error {
 	if v.(value.Number).NumType() != valType {
 		return fmt.Errorf("binop: %w", ExecutionErrorArgumentTypeNotMatch)
 	}
-	val, err := i.stack.Value.Pop()
+	val, err := i.stack.PopValue()
 	if err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}
@@ -435,7 +476,7 @@ func (i *interpreter) unop(valType value.NumberType, f unopFunc) error {
 	if err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}
-	if err := i.stack.Value.Push(res.ToValue()); err != nil {
+	if err := i.stack.PushValue(res.ToValue()); err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}
 	return nil
@@ -473,7 +514,7 @@ func (i *interpreter) binop(valType value.NumberType, f binopFunc) error {
 			return fmt.Errorf("binop: %w", ExecutionErrorArgumentTypeNotMatch)
 		}
 	}
-	values, err := i.stack.Value.PopNRev(2)
+	values, err := i.stack.PopValuesRev(2)
 	if err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}
@@ -481,7 +522,7 @@ func (i *interpreter) binop(valType value.NumberType, f binopFunc) error {
 	if err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}
-	if err := i.stack.Value.Push(res.ToValue()); err != nil {
+	if err := i.stack.PushValue(res.ToValue()); err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}
 	return nil

@@ -104,7 +104,7 @@ func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, 
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	for _, v := range locals {
-		if err := i.stack.Value.Push(v); err != nil {
+		if err := i.stack.PushValue(v); err != nil {
 			return nil, fmt.Errorf("Invoke: \n\t%w", err)
 		}
 	}
@@ -128,7 +128,7 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// get function arguments from the value stack
-	locals, err := i.stack.Value.PopNRev(len(f.Type.Params))
+	locals, err := i.stack.PopValuesRev(len(f.Type.Params))
 	if err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
@@ -196,7 +196,7 @@ func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) 
 	if err := i.stack.Value.Validate(f.Type.Returns); err != nil {
 		return nil, fmt.Errorf("finish: %w", err)
 	}
-	values, err := i.stack.Value.PopNRev(len(f.Type.Returns))
+	values, err := i.stack.PopValuesRev(len(f.Type.Returns))
 	if err != nil {
 		return nil, fmt.Errorf("finish: %w", err)
 	}
@@ -232,6 +232,8 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execLoop(instr)
 	case instruction.IF:
 		return i.execIf(instr)
+	case instruction.BR:
+		return i.execBr(instr)
 	case instruction.I32_CONST, instruction.I64_CONST, instruction.F32_CONST, instruction.F64_CONST:
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:

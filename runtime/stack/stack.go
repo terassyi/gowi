@@ -19,6 +19,7 @@ const (
 var (
 	StackLimit             error = errors.New("Stack limit")
 	StackIsEmpty           error = errors.New("Stack is empty")
+	InvalidStackLength     error = errors.New("Invalid stack length")
 	ValueStackTypeNotMatch error = errors.New("Value type in the stack is not matched")
 )
 
@@ -55,6 +56,57 @@ func WithValue(values []value.Value, frames []Frame, labels []Label) (*Stack, er
 		}
 	}
 	return stack, nil
+}
+
+func (s *Stack) PushValue(val value.Value) error {
+	if err := s.Value.Push(val); err != nil {
+		return err
+	}
+	label, err := s.Label.Top()
+	if err != nil {
+		return err
+	}
+	label.ValCounter++
+	return nil
+}
+
+func (s *Stack) PopValue() (value.Value, error) {
+	val, err := s.Value.Pop()
+	if err != nil {
+		return nil, err
+	}
+	label, err := s.Label.Top()
+	if err != nil {
+		return nil, err
+	}
+	label.ValCounter--
+	return val, nil
+}
+
+func (s *Stack) PopValues(n int) ([]value.Value, error) {
+	values, err := s.Value.PopN(n)
+	if err != nil {
+		return nil, err
+	}
+	label, err := s.Label.Top()
+	if err != nil {
+		return nil, err
+	}
+	label.ValCounter -= uint(n)
+	return values, nil
+}
+
+func (s *Stack) PopValuesRev(n int) ([]value.Value, error) {
+	values, err := s.Value.PopNRev(n)
+	if err != nil {
+		return nil, err
+	}
+	label, err := s.Label.Top()
+	if err != nil {
+		return nil, err
+	}
+	label.ValCounter -= uint(n)
+	return values, nil
 }
 
 type ValueStack struct {
@@ -212,6 +264,13 @@ func (ls *LabelStack) Top() (*Label, error) {
 	return &ls.labels[len(ls.labels)-1], nil
 }
 
+func (ls *LabelStack) Ref(n int) (*Label, error) {
+	if ls.Len() < n {
+		return nil, fmt.Errorf("label ref: %w", InvalidStackLength)
+	}
+	return &ls.labels[len(ls.labels)-1-n], nil
+}
+
 func (ls *LabelStack) Len() int {
 	return len(ls.labels)
 }
@@ -225,6 +284,7 @@ type Label struct {
 	N            uint8
 	Sp           int
 	Flag         bool
+	ValCounter   uint
 }
 
 type Frame struct {

@@ -19,9 +19,9 @@ func TestBinop(t *testing.T) {
 		exp         *stack.Stack
 	}{
 		{
-			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{value.I32(1), value.I32(1)}, nil, nil)},
+			interpreter: &interpreter{stack: stackWithValueIgnoreError([]value.Value{value.I32(1), value.I32(1)}, nil, []stack.Label{{ValCounter: 2}})},
 			f:           add,
-			exp:         stackWithValueIgnoreError([]value.Value{value.I32(2)}, nil, nil),
+			exp:         stackWithValueIgnoreError([]value.Value{value.I32(2)}, nil, []stack.Label{{ValCounter: 1}}),
 		},
 	} {
 		err := d.interpreter.binop(d.t, d.f)
