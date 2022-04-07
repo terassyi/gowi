@@ -3,6 +3,7 @@ package value
 import (
 	"fmt"
 	"math"
+	"unsafe"
 
 	"github.com/terassyi/gowi/types"
 )
@@ -172,6 +173,15 @@ func Float32FromUint32(val uint32) float32 {
 
 func Float64FromUint64(val uint64) float64 {
 	return math.Float64frombits(val)
+}
+
+// unsafe
+func Uint32FromFloat32(val float32) uint32 {
+	return *(*uint32)(unsafe.Pointer(&val))
+}
+
+func Uint64FromFloat64(val float64) uint64 {
+	return *(*uint64)(unsafe.Pointer(&val))
 }
 
 func GetNum[T NumberTypeSet](n Number) T {

@@ -41,3 +41,101 @@ func (*I32Mul) imm() any {
 func (*I32Mul) String() string {
 	return "i32.mul"
 }
+
+type I32DivS struct{}
+
+func (*I32DivS) Opcode() Opcode {
+	return I32_DIV_S
+}
+
+func (*I32DivS) imm() any {
+	return NoImm
+}
+
+func (*I32DivS) String() string {
+	return "i32.div_s"
+}
+
+type I32DivU struct{}
+
+func (*I32DivU) Opcode() Opcode {
+	return I32_DIV_U
+}
+
+func (*I32DivU) imm() any {
+	return NoImm
+}
+
+func (*I32DivU) String() string {
+	return "i32.div_u"
+}
+
+type I64Add struct{}
+
+func (*I64Add) Opcode() Opcode {
+	return I64_ADD
+}
+
+func (*I64Add) imm() any {
+	return NoImm
+}
+
+func (*I64Add) String() string {
+	return "i64.add"
+}
+
+type I64Sub struct{}
+
+func (*I64Sub) Opcode() Opcode {
+	return I64_SUB
+}
+
+func (*I64Sub) imm() any {
+	return NoImm
+}
+
+func (*I64Sub) String() string {
+	return "i64.sub"
+}
+
+type I64Mul struct{}
+
+func (*I64Mul) Opcode() Opcode {
+	return I64_MUL
+}
+
+func (*I64Mul) imm() any {
+	return NoImm
+}
+
+func (*I64Mul) String() string {
+	return "i64.mul"
+}
+
+type I64DivS struct{}
+
+func (*I64DivS) Opcode() Opcode {
+	return I64_DIV_S
+}
+
+func (*I64DivS) imm() any {
+	return NoImm
+}
+
+func (*I64DivS) String() string {
+	return "i64.div_s"
+}
+
+type I64DivU struct{}
+
+func (*I64DivU) Opcode() Opcode {
+	return I64_DIV_U
+}
+
+func (*I64DivU) imm() any {
+	return NoImm
+}
+
+func (*I64DivU) String() string {
+	return "i64.div_u"
+}

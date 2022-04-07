@@ -18,6 +18,7 @@ var (
 	ExecutionErrorNotAddInstruction    error = errors.New("Execution error: not add instr")
 	ExecutionErrorLocalNotExist        error = errors.New("Execution error: local values is not exist")
 	ExecutionErrorArgumentTypeNotMatch error = errors.New("Execution error: argument values is not matched")
+	ExecutionErrorDivideByZero         error = errors.New("Execution error: divide by zero")
 	Trap                               error = errors.New("trap")
 	TrapUnreachable                    error = errors.New("trap: unreachable")
 )
@@ -403,19 +404,34 @@ func (i *interpreter) execCall(instr instruction.Instruction) (instructionResult
 }
 
 func (i *interpreter) execConst(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Printf("%s(%v)\n", instr, instruction.Imm[int32](instr))
 	switch instr.Opcode() {
 	case instruction.I32_CONST:
 		imm := instruction.Imm[int32](instr)
+		fmt.Printf("%s(%v)\n", instr, imm)
 		if err := i.stack.PushValue(value.I32(imm)); err != nil {
 			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
 		return instructionResultRunNext, nil
 	case instruction.I64_CONST:
+		imm := instruction.Imm[int64](instr)
+		fmt.Printf("%s(%v)\n", instr, imm)
+		if err := i.stack.PushValue(value.I64(imm)); err != nil {
+			return instructionResultTrap, fmt.Errorf("const: %w", err)
+		}
 		return instructionResultRunNext, nil
 	case instruction.F32_CONST:
+		imm := instruction.Imm[uint32](instr)
+		fmt.Printf("%s(%v)\n", instr, imm)
+		if err := i.stack.PushValue(value.F32(imm)); err != nil {
+			return instructionResultTrap, fmt.Errorf("const: %w", err)
+		}
 		return instructionResultRunNext, nil
 	case instruction.F64_CONST:
+		imm := instruction.Imm[uint64](instr)
+		fmt.Printf("%s(%v)\n", instr, imm)
+		if err := i.stack.PushValue(value.F64(imm)); err != nil {
+			return instructionResultTrap, fmt.Errorf("const: %w", err)
+		}
 		return instructionResultRunNext, nil
 	default:
 		return instructionResultTrap, ExcetutionErrorNotConstInstruction
@@ -524,10 +540,37 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 			return instructionResultTrap, err
 		}
 	case instruction.I64_ADD:
+		if err := i.binop(value.NumTypeI64, add); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_SUB:
+		if err := i.binop(value.NumTypeI32, sub); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_SUB:
+		if err := i.binop(value.NumTypeI64, sub); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_MUL:
+		if err := i.binop(value.NumTypeI32, mul); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_MUL:
+		if err := i.binop(value.NumTypeI64, mul); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_DIV_S:
+		if err := i.binop(value.NumTypeI32, divs); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_DIV_S:
+		if err := i.binop(value.NumTypeI64, divs); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
-		return instructionResultTrap, ExecutionErrorNotAddInstruction
+		return instructionResultTrap, instruction.NotImplemented
 	}
 	return instructionResultRunNext, nil
 }
@@ -569,6 +612,66 @@ func add(a, b value.Number) (value.Number, error) {
 	switch a.NumType() {
 	case value.NumTypeI32:
 		return value.I32(int32(value.GetNum[value.I32](a)) + int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) + int64(value.GetNum[value.I64](b))), nil
+	}
+	return nil, nil
+}
+
+func sub(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		return value.I32(int32(value.GetNum[value.I32](a)) - int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) - int64(value.GetNum[value.I64](b))), nil
+	}
+	return nil, nil
+}
+
+func mul(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		return value.I32(int32(value.GetNum[value.I32](a)) * int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) * int64(value.GetNum[value.I64](b))), nil
+	}
+	return nil, nil
+}
+
+func divs(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		if value.GetNum[value.I32](b) == value.I32(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		return value.I32(int32(value.GetNum[value.I32](a)) / int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		if value.GetNum[value.I64](b) == value.I64(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		return value.I64(int64(value.GetNum[value.I64](a)) / int64(value.GetNum[value.I64](b))), nil
+	}
+	return nil, nil
+}
+
+func divu(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		return value.I32(int32(value.GetNum[value.I32](a)) * int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) * int64(value.GetNum[value.I64](b))), nil
 	}
 	return nil, nil
 }

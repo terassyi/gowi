@@ -1,3 +1,4 @@
 .devcontainer
 */__debug_bin
 gowi
+.docker

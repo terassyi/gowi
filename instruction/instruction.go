@@ -196,13 +196,13 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	case F32_CONST:
 		imm, err := types.DecodeUint32(buf)
 		if err != nil {
-			return nil, fmt.Errorf("Instruction(i32_const) decode: %w", err)
+			return nil, fmt.Errorf("Instruction(f32_const) decode: %w", err)
 		}
 		return &F32Const{Imm: imm}, nil
 	case F64_CONST:
 		imm, err := types.DecodeUint64(buf)
 		if err != nil {
-			return nil, fmt.Errorf("Instruction(i32_const) decode: %w", err)
+			return nil, fmt.Errorf("Instruction(f64_const) decode: %w", err)
 		}
 		return &F64Const{Imm: imm}, nil
 	// case I32_EQZ:
@@ -248,8 +248,10 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I32Sub{}, nil
 	case I32_MUL:
 		return &I32Mul{}, nil
-	// case I32_DIV_S:
-	// case I32_DIV_U:
+	case I32_DIV_S:
+		return &I32DivS{}, nil
+	case I32_DIV_U:
+		return &I32DivU{}, nil
 	// case I32_REM_S:
 	// case I32_REM_U:
 	// case I32_AND:
@@ -263,11 +265,16 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	// case I64_CLZ:
 	// case I64_CTZ:
 	// case I64_POPCNT:
-	// case I64_ADD:
-	// case I64_SUB:
-	// case I64_MUL:
-	// case I64_DIV_S:
-	// case I64_DIV_U:
+	case I64_ADD:
+		return &I64Add{}, nil
+	case I64_SUB:
+		return &I64Sub{}, nil
+	case I64_MUL:
+		return &I64Mul{}, nil
+	case I64_DIV_S:
+		return &I64DivS{}, nil
+	case I64_DIV_U:
+		return &I64DivU{}, nil
 	// case I64_REM_S:
 	// case I64_REM_U:
 	// case I64_AND:
