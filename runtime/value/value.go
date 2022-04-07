@@ -1,6 +1,8 @@
 package value
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"math"
 	"unsafe"
@@ -82,6 +84,18 @@ func (I32) ExpectNumber() (NumberType, error) {
 	return NumTypeI32, nil
 }
 
+func (i I32) ToUint32() (uint32, error) {
+	buff := bytes.NewBuffer(make([]byte, 0, 4))
+	if err := binary.Write(buff, binary.BigEndian, int32(i)); err != nil {
+		return 0, fmt.Errorf("ToUint32: %w", err)
+	}
+	var v uint32
+	if err := binary.Read(buff, binary.BigEndian, &v); err != nil {
+		return 0, fmt.Errorf("ToUint32: %w", err)
+	}
+	return v, nil
+}
+
 type I64 int64
 
 func (I64) NumType() NumberType {
@@ -105,6 +119,18 @@ func (i I64) ToValue() Value {
 
 func (I64) ExpectNumber() (NumberType, error) {
 	return NumTypeI64, nil
+}
+
+func (i I64) ToUint64() (uint64, error) {
+	buff := bytes.NewBuffer(make([]byte, 0, 8))
+	if err := binary.Write(buff, binary.BigEndian, int64(i)); err != nil {
+		return 0, fmt.Errorf("ToUint64: %w", err)
+	}
+	var v uint64
+	if err := binary.Read(buff, binary.BigEndian, &v); err != nil {
+		return 0, fmt.Errorf("ToUint64: %w", err)
+	}
+	return v, nil
 }
 
 type F32 float32

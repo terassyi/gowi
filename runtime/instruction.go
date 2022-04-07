@@ -19,6 +19,7 @@ var (
 	ExecutionErrorLocalNotExist        error = errors.New("Execution error: local values is not exist")
 	ExecutionErrorArgumentTypeNotMatch error = errors.New("Execution error: argument values is not matched")
 	ExecutionErrorDivideByZero         error = errors.New("Execution error: divide by zero")
+	ExecutionErrorParse                error = errors.New("Execution error: failed to parse")
 	Trap                               error = errors.New("trap")
 	TrapUnreachable                    error = errors.New("trap: unreachable")
 )
@@ -567,6 +568,14 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 		if err := i.binop(value.NumTypeI64, divs); err != nil {
 			return instructionResultTrap, err
 		}
+	case instruction.I32_DIV_U:
+		if err := i.binop(value.NumTypeI32, divu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_DIV_U:
+		if err := i.binop(value.NumTypeI64, divu); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
@@ -669,9 +678,31 @@ func divu(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) * int32(value.GetNum[value.I32](b))), nil
+		if value.GetNum[value.I32](b) == value.I32(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		ua, err := value.GetNum[value.I32](a).ToUint32()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		ub, err := value.GetNum[value.I32](b).ToUint32()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		return value.I32(ua / ub), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) * int64(value.GetNum[value.I64](b))), nil
+		if value.GetNum[value.I64](b) == value.I64(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		ua, err := value.GetNum[value.I64](a).ToUint64()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		ub, err := value.GetNum[value.I64](b).ToUint64()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		return value.I64(ua / ub), nil
 	}
 	return nil, nil
 }
