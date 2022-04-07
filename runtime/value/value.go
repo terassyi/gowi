@@ -1,7 +1,20 @@
 package value
 
+import (
+	"fmt"
+	"math"
+
+	"github.com/terassyi/gowi/types"
+)
+
 type Number interface {
 	NumType() NumberType
+	ValidateValueType(t types.ValueType) bool
+	ToValue() Value
+}
+
+type NumberTypeSet interface {
+	~int32 | ~int64 | ~float32 | ~float64
 }
 
 type Reference interface {
@@ -10,11 +23,9 @@ type Reference interface {
 
 type Value interface {
 	ValType() ValueType
+	// ExpectNumber() (NumberType, error)
 }
 
-type ExternalVal interface {
-	ExValType() ExternValueType
-}
 type NumberType uint8
 
 const (
@@ -45,15 +56,6 @@ const (
 	ValTypeRef ValueType = 2
 )
 
-type ExternValueType uint8
-
-const (
-	ExternValTypeFunc   ExternValueType = 0
-	ExternValTypeTable  ExternValueType = 1
-	ExternValTypeMem    ExternValueType = 2
-	ExternValTypeGlobal ExternValueType = 3
-)
-
 type I32 int32
 
 func (I32) NumType() NumberType {
@@ -62,6 +64,21 @@ func (I32) NumType() NumberType {
 
 func (I32) ValType() ValueType {
 	return ValTypeNum
+}
+
+func (i I32) ToValue() Value {
+	return i
+}
+
+func (I32) ValidateValueType(v types.ValueType) bool {
+	if v == types.I32 {
+		return true
+	}
+	return false
+}
+
+func (I32) ExpectNumber() (NumberType, error) {
+	return NumTypeI32, nil
 }
 
 type I64 int64
@@ -74,6 +91,21 @@ func (I64) ValType() ValueType {
 	return ValTypeNum
 }
 
+func (I64) ValidateValueType(v types.ValueType) bool {
+	if v == types.I64 {
+		return true
+	}
+	return false
+}
+
+func (i I64) ToValue() Value {
+	return i
+}
+
+func (I64) ExpectNumber() (NumberType, error) {
+	return NumTypeI64, nil
+}
+
 type F32 float32
 
 func (F32) NumType() NumberType {
@@ -82,6 +114,21 @@ func (F32) NumType() NumberType {
 
 func (F32) ValType() ValueType {
 	return ValTypeNum
+}
+
+func (F32) ValidateValueType(v types.ValueType) bool {
+	if v == types.F32 {
+		return true
+	}
+	return false
+}
+
+func (f F32) ToValue() Value {
+	return f
+}
+
+func (F32) ExpectNumber() (NumberType, error) {
+	return NumTypeF32, nil
 }
 
 type F64 float64
@@ -94,8 +141,62 @@ func (F64) ValType() ValueType {
 	return ValTypeNum
 }
 
+func (f F64) ToValue() Value {
+	return f
+}
+
+func (F64) ValidateValueType(v types.ValueType) bool {
+	if v == types.F64 {
+		return true
+	}
+	return false
+}
+
+func (F64) ExpectNumber() (NumberType, error) {
+	return NumTypeF64, nil
+}
+
 type Vector [16]byte // 128bit value
 
 func (Vector) ValType() ValueType {
 	return ValTypeVec
+}
+
+func (Vector) ExpectNumber() (NumberType, error) {
+	return NumberType(0xff), fmt.Errorf("Not number")
+}
+
+func Float32FromUint32(val uint32) float32 {
+	return math.Float32frombits(val)
+}
+
+func Float64FromUint64(val uint64) float64 {
+	return math.Float64frombits(val)
+}
+
+func GetNum[T NumberTypeSet](n Number) T {
+	return n.(T)
+}
+
+type Result interface {
+	ResultType()
+}
+
+type ResultType uint8
+
+const (
+	ResultTypeValue ResultType = 0
+	ResultTypeTrap  ResultType = 1
+)
+
+type Trap struct {
+	error
+}
+
+type ResultTypeSet interface {
+	~int32 | ~int64 | ~float32 | ~float64 | Trap
+}
+
+func GetResult[T ResultTypeSet](r Result) T {
+	return r.(T)
 }

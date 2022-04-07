@@ -7,24 +7,28 @@ import (
 )
 
 var (
-	InvalidValueType    error = errors.New("Invalid value type")
-	InvalidFuncType     error = errors.New("Invalid func type")
-	InvalidExternalKind error = errors.New("Invalid external kind value")
-	InvalidInitExpr     error = errors.New("Invalid init_expr")
-	NotImplemented      error = errors.New("Not implemented")
-	InvalidLimitsValue  error = errors.New("Invalid limits values")
+	InvalidValueType     error = errors.New("Invalid value type")
+	InvalidFuncType      error = errors.New("Invalid func type")
+	InvalidElemType      error = errors.New("Invalid elem type")
+	InvalidExternalKind  error = errors.New("Invalid external kind value")
+	InvalidInitExpr      error = errors.New("Invalid init_expr")
+	NotImplemented       error = errors.New("Not implemented")
+	InvalidLimitsValue   error = errors.New("Invalid limits values")
+	ImvalidReferenceType error = errors.New("Invalid reference type")
 )
 
 type ValueType uint8
 
 const (
-	I32     ValueType = 0x7f
-	I64     ValueType = 0x7e
-	F32     ValueType = 0x7d
-	F64     ValueType = 0x7c
-	ANYFUNC ValueType = 0x70
-	FUNC    ValueType = 0x60
-	EMPTY   ValueType = 0x40
+	I32       ValueType = 0x7f
+	I64       ValueType = 0x7e
+	F32       ValueType = 0x7d
+	F64       ValueType = 0x7c
+	V128      ValueType = 0x7b
+	ANYFUNC   ValueType = 0x70
+	FUNC      ValueType = 0x60
+	EMPTY     ValueType = 0x40
+	BLOCKTYPE ValueType = 0x40
 )
 
 func NewValueType(v uint8) (ValueType, error) {
@@ -37,6 +41,8 @@ func NewValueType(v uint8) (ValueType, error) {
 		return F32, nil
 	case 0x7c:
 		return F64, nil
+	case 0x7b:
+		return V128, nil
 	case 0x70:
 		return ANYFUNC, nil
 	case 0x60:
@@ -58,6 +64,8 @@ func (v ValueType) String() string {
 		return "f32"
 	case F64:
 		return "f64"
+	case V128:
+		return "v128"
 	case ANYFUNC:
 		return "anyfunc"
 	case FUNC:
@@ -66,6 +74,15 @@ func (v ValueType) String() string {
 		return "empty"
 	default:
 		return "unknown"
+	}
+}
+
+func (v ValueType) IsNumber() bool {
+	switch v {
+	case I32, I64, F32, F64:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -78,10 +95,24 @@ const (
 	ElemTypeExternref ElemType = 1
 )
 
+func NewElemType(val VarUint32) (ElemType, error) {
+	switch uint32(val) {
+	case uint32(ANYFUNC):
+		return ElemTypeFuncref, nil
+	case uint32(0x6f):
+		return ElemTypeExternref, nil
+	default:
+		return 0xff, InvalidElemType
+	}
+}
+
 func (e ElemType) String() string {
 	switch e {
-	case ElemType(ANYFUNC):
+	// case ElemType(ANYFUNC):
+	case ElemTypeFuncref:
 		return "funcref"
+	case ElemTypeExternref:
+		return "externref"
 	default:
 		return "unknown"
 	}
@@ -164,15 +195,16 @@ func NewTableType(buf *bytes.Buffer) (*TableType, error) {
 	if err != nil {
 		return nil, fmt.Errorf("NewTableType: decode elem: %w", err)
 	}
-	if elm != VarUint32(ANYFUNC) {
-		return nil, fmt.Errorf("%w: only allowed anyfunc: %x", NotImplemented, elm)
+	typ, err := NewElemType(elm)
+	if err != nil {
+		return nil, fmt.Errorf("NewTableType: %w", err)
 	}
 	l, err := NewLimits(buf)
 	if err != nil {
 		return nil, fmt.Errorf("NewTableType: decoder resizable_limits: %w", err)
 	}
 	return &TableType{
-		ElementType: ElemType(elm),
+		ElementType: typ,
 		Limits:      l,
 	}, nil
 }
@@ -314,6 +346,18 @@ const (
 	RefTypeFunc   ReferenceType = 0x70
 	RefTypeExtern ReferenceType = 0x6f
 )
+
+func ReferenceTypeFromElemType(elem ElemType) (ReferenceType, error) {
+	switch elem {
+	case ElemTypeFuncref:
+		return RefTypeFunc, nil
+	case ElemTypeExternref:
+		return RefTypeExtern, nil
+	default:
+		return ReferenceType(0), ImvalidReferenceType
+	}
+
+}
 
 type ImportDescTypeSet interface {
 	uint32 | *FuncType | *TableType | *MemoryType | *GlobalType

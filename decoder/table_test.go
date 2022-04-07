@@ -18,7 +18,7 @@ func TestNewTable(t *testing.T) {
 			sec: &table{
 				entries: []*types.TableType{
 					{
-						ElementType: types.ElemType(types.ANYFUNC),
+						ElementType: types.ElemTypeFuncref,
 						Limits:      &types.Limits{Min: uint32(0x02), Max: uint32(0x00)},
 					},
 				},

@@ -6,6 +6,6 @@ import (
 )
 
 type Element struct {
-	Type types.ElemType
+	Type types.ReferenceType
 	Elem []value.Reference // ref
 }

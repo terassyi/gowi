@@ -69,6 +69,30 @@ func TestNewCode(t *testing.T) {
 				},
 			},
 		},
+		{
+			payload: []byte{0x01, 0x08, 0x00, 0x41, 0x00, 0x04, 0x40, 0x01, 0x0b, 0x0b},
+			sec: &code{
+				bodies: []*functionBody{
+					{
+						locals: []*localEntry{},
+						code:   []instruction.Instruction{&instruction.I32Const{Imm: int32(0)}, &instruction.If{Imm: types.BlockType(types.ValueType(0x40))}, &instruction.Nop{}, &instruction.End{}, &instruction.End{}},
+					},
+				},
+			},
+		},
+		{
+			payload: []byte{0x01, 0x0d, 0x00, 0x41, 0x00, 0x04, 0x40, 0x41, 0x01, 0x04, 0x40, 0x01, 0x0b, 0x0b, 0x0b},
+			sec: &code{
+				bodies: []*functionBody{
+					{
+						locals: []*localEntry{},
+						code: []instruction.Instruction{&instruction.I32Const{Imm: int32(0)}, &instruction.If{Imm: types.BlockType(types.ValueType(0x40))},
+							&instruction.I32Const{Imm: int32(1)}, &instruction.If{Imm: types.BlockType(types.ValueType(0x40))},
+							&instruction.Nop{}, &instruction.End{}, &instruction.End{}, &instruction.End{}},
+					},
+				},
+			},
+		},
 	} {
 		c, err := newCode(d.payload)
 		require.NoError(t, err)
