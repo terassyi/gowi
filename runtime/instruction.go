@@ -187,6 +187,7 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 }
 
 func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, error) {
+	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-br-l
 	labelIndex := instruction.Imm[uint32](instr)
 	fmt.Printf("%s label=%d\n", instr, labelIndex)
 	if i.stack.Label.Len() <= int(labelIndex) {
@@ -212,9 +213,6 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 			return instructionResultTrap, fmt.Errorf("br: %w", err)
 		}
 	}
-	// if _, err := i.stack.Label.Pop(); err != nil {
-	// 	return instructionResultTrap, fmt.Errorf("br: %w", err)
-	// }
 	for _, v := range values {
 		if err := i.stack.PushValue(v); err != nil {
 			return instructionResultTrap, fmt.Errorf("br: %w", err)
@@ -222,6 +220,42 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 	}
 	if err := i.cur.update(i.stack); err != nil {
 		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	}
+	return instructionResultLabelEnd, nil
+}
+
+func (i *interpreter) execBrIf(instr instruction.Instruction) (instructionResult, error) {
+	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-br-l
+	fmt.Printf("%s label=%x\n", instr, instruction.Imm[uint32](instr))
+	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+		return instructionResultTrap, fmt.Errorf("br_if: %w", err)
+	}
+	cond, err := i.stack.PopValue()
+	if err != nil {
+		return instructionResultTrap, fmt.Errorf("br_if: %w", err)
+	}
+	switch cond {
+	case value.I32(0):
+		return instructionResultRunNext, nil
+	default:
+		return i.execBr(instr)
+	}
+}
+
+func (i *interpreter) execReturn(instr instruction.Instruction) (instructionResult, error) {
+	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-return
+	fmt.Println(instr)
+	if i.stack.Value.Len() < int(i.cur.label.N) {
+		return instructionResultTrap, fmt.Errorf("return: the value stack must have at least %d values", i.cur.label.N)
+	}
+	if i.stack.Frame.IsEmpty() {
+		return instructionResultTrap, fmt.Errorf("return: the frame stack must have at least one vlaue")
+	}
+	if err := i.restoreStack(); err != nil {
+		return instructionResultTrap, fmt.Errorf("label end: %w", err)
+	}
+	if err := i.cur.update(i.stack); err != nil {
+		return instructionResultTrap, fmt.Errorf("label end: %w", err)
 	}
 	return instructionResultLabelEnd, nil
 }

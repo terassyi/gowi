@@ -151,6 +151,9 @@ func (i *interpreter) execute() error {
 		// frame := i.cur.frame
 		label := i.cur.label
 		contexSwitch := false
+		if i.stack.Label.Len() <= 1 {
+			return nil
+		}
 		for sp := label.Sp; sp < len(label.Instructions); sp++ {
 			instr := label.Instructions[sp]
 			res, err := i.step(instr)
@@ -234,6 +237,10 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execIf(instr)
 	case instruction.BR:
 		return i.execBr(instr)
+	case instruction.BR_IF:
+		return i.execBrIf(instr)
+	case instruction.RETURN:
+		return i.execReturn(instr)
 	case instruction.I32_CONST, instruction.I64_CONST, instruction.F32_CONST, instruction.F64_CONST:
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:
