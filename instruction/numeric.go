@@ -195,3 +195,87 @@ func (*I64RemU) imm() any {
 func (*I64RemU) String() string {
 	return "i64.rem_u"
 }
+
+type I32And struct{}
+
+func (*I32And) Opcode() Opcode {
+	return I32_AND
+}
+
+func (*I32And) imm() any {
+	return NoImm
+}
+
+func (*I32And) String() string {
+	return "i32.and"
+}
+
+type I64And struct{}
+
+func (*I64And) Opcode() Opcode {
+	return I64_AND
+}
+
+func (*I64And) imm() any {
+	return NoImm
+}
+
+func (*I64And) String() string {
+	return "i64.and"
+}
+
+type I32Or struct{}
+
+func (*I32Or) Opcode() Opcode {
+	return I32_OR
+}
+
+func (*I32Or) imm() any {
+	return NoImm
+}
+
+func (*I32Or) String() string {
+	return "i32.or"
+}
+
+type I64Or struct{}
+
+func (*I64Or) Opcode() Opcode {
+	return I64_OR
+}
+
+func (*I64Or) imm() any {
+	return NoImm
+}
+
+func (*I64Or) String() string {
+	return "i64.or"
+}
+
+type I32Xor struct{}
+
+func (*I32Xor) Opcode() Opcode {
+	return I32_XOR
+}
+
+func (*I32Xor) imm() any {
+	return NoImm
+}
+
+func (*I32Xor) String() string {
+	return "i32.xor"
+}
+
+type I64Xor struct{}
+
+func (*I64Xor) Opcode() Opcode {
+	return I64_XOR
+}
+
+func (*I64Xor) imm() any {
+	return NoImm
+}
+
+func (*I64Xor) String() string {
+	return "i64.xor"
+}

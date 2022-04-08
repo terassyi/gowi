@@ -593,6 +593,30 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 		if err := i.binop(value.NumTypeI64, remu); err != nil {
 			return instructionResultTrap, err
 		}
+	case instruction.I32_AND:
+		if err := i.binop(value.NumTypeI32, and); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_AND:
+		if err := i.binop(value.NumTypeI64, and); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_OR:
+		if err := i.binop(value.NumTypeI32, or); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_OR:
+		if err := i.binop(value.NumTypeI64, or); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_XOR:
+		if err := i.binop(value.NumTypeI32, xor); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_XOR:
+		if err := i.binop(value.NumTypeI64, xor); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
@@ -786,4 +810,46 @@ func remu(a, b value.Number) (value.Number, error) {
 		return value.I64(ua % ub), nil
 	}
 	return nil, nil
+}
+
+func and(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		return value.I32(int32(value.GetNum[value.I32](a)) & int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) & int64(value.GetNum[value.I64](b))), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func or(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		return value.I32(int32(value.GetNum[value.I32](a)) | int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) | int64(value.GetNum[value.I64](b))), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func xor(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		return value.I32(int32(value.GetNum[value.I32](a)) ^ int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		return value.I64(int64(value.GetNum[value.I64](a)) ^ int64(value.GetNum[value.I64](b))), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
 }
