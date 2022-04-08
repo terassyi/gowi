@@ -20,6 +20,7 @@ var (
 	ExecutionErrorArgumentTypeNotMatch error = errors.New("Execution error: argument values is not matched")
 	ExecutionErrorDivideByZero         error = errors.New("Execution error: divide by zero")
 	ExecutionErrorParse                error = errors.New("Execution error: failed to parse")
+	ExecutionErrorOperation            error = errors.New("Execution error: operation error")
 	Trap                               error = errors.New("trap")
 	TrapUnreachable                    error = errors.New("trap: unreachable")
 )
@@ -576,6 +577,22 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 		if err := i.binop(value.NumTypeI64, divu); err != nil {
 			return instructionResultTrap, err
 		}
+	case instruction.I32_REM_S:
+		if err := i.binop(value.NumTypeI32, rems); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_REM_S:
+		if err := i.binop(value.NumTypeI64, rems); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_REM_U:
+		if err := i.binop(value.NumTypeI32, remu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_REM_U:
+		if err := i.binop(value.NumTypeI64, remu); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
@@ -703,6 +720,70 @@ func divu(a, b value.Number) (value.Number, error) {
 			return nil, ExecutionErrorParse
 		}
 		return value.I64(ua / ub), nil
+	}
+	return nil, nil
+}
+
+func rems(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		if value.GetNum[value.I32](b) == value.I32(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		return value.I32(int32(value.GetNum[value.I32](a)) % int32(value.GetNum[value.I32](b))), nil
+	case value.NumTypeI64:
+		if value.GetNum[value.I64](b) == value.I64(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		return value.I64(int64(value.GetNum[value.I64](a)) % int64(value.GetNum[value.I64](b))), nil
+	}
+	return nil, nil
+}
+
+func remu(a, b value.Number) (value.Number, error) {
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		if value.GetNum[value.I32](b) == value.I32(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		ua, err := value.GetNum[value.I32](a).ToUint32()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		ub, err := value.GetNum[value.I32](b).ToUint32()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		div, err := divu(a, b)
+		if err != nil {
+			return nil, ExecutionErrorOperation
+		}
+		udiv, err := value.GetNum[value.I32](div).ToUint32()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		res := ua - ub*udiv
+		return value.I32(res), nil
+
+	case value.NumTypeI64:
+		if value.GetNum[value.I64](b) == value.I64(0) {
+			return nil, ExecutionErrorDivideByZero
+		}
+		ua, err := value.GetNum[value.I64](a).ToUint64()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		ub, err := value.GetNum[value.I64](b).ToUint64()
+		if err != nil {
+			return nil, ExecutionErrorParse
+		}
+		return value.I64(ua % ub), nil
 	}
 	return nil, nil
 }

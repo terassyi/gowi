@@ -252,8 +252,10 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I32DivS{}, nil
 	case I32_DIV_U:
 		return &I32DivU{}, nil
-	// case I32_REM_S:
-	// case I32_REM_U:
+	case I32_REM_S:
+		return &I32RemS{}, nil
+	case I32_REM_U:
+		return &I32RemU{}, nil
 	// case I32_AND:
 	// case I32_OR:
 	// case I32_XOR:
@@ -275,8 +277,10 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I64DivS{}, nil
 	case I64_DIV_U:
 		return &I64DivU{}, nil
-	// case I64_REM_S:
-	// case I64_REM_U:
+	case I64_REM_S:
+		return &I64RemS{}, nil
+	case I64_REM_U:
+		return &I64RemU{}, nil
 	// case I64_AND:
 	// case I64_OR:
 	// case I64_XOR:

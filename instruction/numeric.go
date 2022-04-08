@@ -139,3 +139,59 @@ func (*I64DivU) imm() any {
 func (*I64DivU) String() string {
 	return "i64.div_u"
 }
+
+type I32RemS struct{}
+
+func (*I32RemS) Opcode() Opcode {
+	return I32_REM_S
+}
+
+func (*I32RemS) imm() any {
+	return NoImm
+}
+
+func (*I32RemS) String() string {
+	return "i32.rem_s"
+}
+
+type I32RemU struct{}
+
+func (*I32RemU) Opcode() Opcode {
+	return I32_REM_U
+}
+
+func (*I32RemU) imm() any {
+	return NoImm
+}
+
+func (*I32RemU) String() string {
+	return "i32.rem_u"
+}
+
+type I64RemS struct{}
+
+func (*I64RemS) Opcode() Opcode {
+	return I64_REM_S
+}
+
+func (*I64RemS) imm() any {
+	return NoImm
+}
+
+func (*I64RemS) String() string {
+	return "i64.rem_s"
+}
+
+type I64RemU struct{}
+
+func (*I64RemU) Opcode() Opcode {
+	return I64_REM_U
+}
+
+func (*I64RemU) imm() any {
+	return NoImm
+}
+
+func (*I64RemU) String() string {
+	return "i64.rem_u"
+}
