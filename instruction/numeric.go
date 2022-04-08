@@ -279,3 +279,31 @@ func (*I64Xor) imm() any {
 func (*I64Xor) String() string {
 	return "i64.xor"
 }
+
+type I32Shl struct{}
+
+func (*I32Shl) Opcode() Opcode {
+	return I32_SHL
+}
+
+func (*I32Shl) imm() any {
+	return NoImm
+}
+
+func (*I32Shl) String() string {
+	return "i32.shl"
+}
+
+type I64Shl struct{}
+
+func (*I64Shl) Opcode() Opcode {
+	return I64_SHL
+}
+
+func (*I64Shl) imm() any {
+	return NoImm
+}
+
+func (*I64Shl) String() string {
+	return "i64.shl"
+}

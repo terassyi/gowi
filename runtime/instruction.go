@@ -617,6 +617,14 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 		if err := i.binop(value.NumTypeI64, xor); err != nil {
 			return instructionResultTrap, err
 		}
+	case instruction.I32_SHL:
+		if err := i.binop(value.NumTypeI32, shl); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_SHL:
+		if err := i.binop(value.NumTypeI64, shl); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
@@ -849,6 +857,25 @@ func xor(a, b value.Number) (value.Number, error) {
 		return value.I32(int32(value.GetNum[value.I32](a)) ^ int32(value.GetNum[value.I32](b))), nil
 	case value.NumTypeI64:
 		return value.I64(int64(value.GetNum[value.I64](a)) ^ int64(value.GetNum[value.I64](b))), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func shl(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ishl-mathrm-ishl-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		k := int(value.GetNum[value.I32](b))
+		v := int64(value.GetNum[value.I32](a))
+		return value.I32(int32((v << k) % (2 << 32))), nil
+	case value.NumTypeI64:
+		k := int(value.GetNum[value.I64](b))
+		v := int64(value.GetNum[value.I64](a))
+		return value.I64(v << k), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
