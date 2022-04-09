@@ -25,6 +25,10 @@ var (
 	TrapUnreachable                    error = errors.New("trap: unreachable")
 )
 
+const (
+	MOD_32 uint64 = 1 << 32
+)
+
 type instructionResult uint8
 
 const (
@@ -669,9 +673,13 @@ func add(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) + int32(value.GetNum[value.I32](b))), nil
+		i1 := uint64(value.GetNum[value.I32](a).Unsigned())
+		i2 := uint64(value.GetNum[value.I32](b).Unsigned())
+		return value.I32(i1 + i2), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) + int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 + i2), nil
 	}
 	return nil, nil
 }
@@ -682,9 +690,13 @@ func sub(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) - int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 - i2), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) - int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 - i2), nil
 	}
 	return nil, nil
 }
@@ -695,9 +707,13 @@ func mul(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) * int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 * i2), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) * int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 * i2), nil
 	}
 	return nil, nil
 }
@@ -711,12 +727,16 @@ func divs(a, b value.Number) (value.Number, error) {
 		if value.GetNum[value.I32](b) == value.I32(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		return value.I32(int32(value.GetNum[value.I32](a)) / int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Signed()
+		i2 := value.GetNum[value.I32](b).Signed()
+		return value.I32(i1 / i2), nil
 	case value.NumTypeI64:
 		if value.GetNum[value.I64](b) == value.I64(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		return value.I64(int64(value.GetNum[value.I64](a)) / int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Signed()
+		i2 := value.GetNum[value.I64](b).Signed()
+		return value.I64(i1 / i2), nil
 	}
 	return nil, nil
 }
@@ -730,28 +750,16 @@ func divu(a, b value.Number) (value.Number, error) {
 		if value.GetNum[value.I32](b) == value.I32(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		ua, err := value.GetNum[value.I32](a).ToUint32()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		ub, err := value.GetNum[value.I32](b).ToUint32()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		return value.I32(ua / ub), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 / i2), nil
 	case value.NumTypeI64:
 		if value.GetNum[value.I64](b) == value.I64(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		ua, err := value.GetNum[value.I64](a).ToUint64()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		ub, err := value.GetNum[value.I64](b).ToUint64()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		return value.I64(ua / ub), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 / i2), nil
 	}
 	return nil, nil
 }
@@ -765,12 +773,16 @@ func rems(a, b value.Number) (value.Number, error) {
 		if value.GetNum[value.I32](b) == value.I32(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		return value.I32(int32(value.GetNum[value.I32](a)) % int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Signed()
+		i2 := value.GetNum[value.I32](b).Signed()
+		return value.I32(i1 % i2), nil
 	case value.NumTypeI64:
 		if value.GetNum[value.I64](b) == value.I64(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		return value.I64(int64(value.GetNum[value.I64](a)) % int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Signed()
+		i2 := value.GetNum[value.I64](b).Signed()
+		return value.I64(i1 % i2), nil
 	}
 	return nil, nil
 }
@@ -784,38 +796,17 @@ func remu(a, b value.Number) (value.Number, error) {
 		if value.GetNum[value.I32](b) == value.I32(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		ua, err := value.GetNum[value.I32](a).ToUint32()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		ub, err := value.GetNum[value.I32](b).ToUint32()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		div, err := divu(a, b)
-		if err != nil {
-			return nil, ExecutionErrorOperation
-		}
-		udiv, err := value.GetNum[value.I32](div).ToUint32()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		res := ua - ub*udiv
-		return value.I32(res), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 % i2), nil
 
 	case value.NumTypeI64:
 		if value.GetNum[value.I64](b) == value.I64(0) {
 			return nil, ExecutionErrorDivideByZero
 		}
-		ua, err := value.GetNum[value.I64](a).ToUint64()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		ub, err := value.GetNum[value.I64](b).ToUint64()
-		if err != nil {
-			return nil, ExecutionErrorParse
-		}
-		return value.I64(ua % ub), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 % i2), nil
 	}
 	return nil, nil
 }
@@ -826,9 +817,13 @@ func and(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) & int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 & i2), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) & int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 & i2), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
@@ -840,9 +835,13 @@ func or(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) | int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 | i2), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) | int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 | i2), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
@@ -854,9 +853,13 @@ func xor(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		return value.I32(int32(value.GetNum[value.I32](a)) ^ int32(value.GetNum[value.I32](b))), nil
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		return value.I32(i1 ^ i2), nil
 	case value.NumTypeI64:
-		return value.I64(int64(value.GetNum[value.I64](a)) ^ int64(value.GetNum[value.I64](b))), nil
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		return value.I64(i1 ^ i2), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
@@ -869,13 +872,13 @@ func shl(a, b value.Number) (value.Number, error) {
 	}
 	switch a.NumType() {
 	case value.NumTypeI32:
-		k := int(value.GetNum[value.I32](b))
-		v := int64(value.GetNum[value.I32](a))
-		return value.I32(int32((v << k) % (2 << 32))), nil
+		k := value.GetNum[value.I32](b).Unsigned()
+		v := value.GetNum[value.I32](a).Unsigned()
+		return value.I32(v << (k % 32)), nil
 	case value.NumTypeI64:
-		k := int(value.GetNum[value.I64](b))
-		v := int64(value.GetNum[value.I64](a))
-		return value.I64(v << k), nil
+		k := value.GetNum[value.I64](b).Unsigned()
+		v := value.GetNum[value.I64](a).Unsigned()
+		return value.I64(v << (k % 64)), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
