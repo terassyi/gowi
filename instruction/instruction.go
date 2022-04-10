@@ -264,10 +264,14 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I32Xor{}, nil
 	case I32_SHL:
 		return &I32Shl{}, nil
-	// case I32_SHR_S:
-	// case I32_SHR_U:
-	// case I32_ROTL:
-	// case I32_ROTR:
+	case I32_SHR_S:
+		return &I32ShrS{}, nil
+	case I32_SHR_U:
+		return &I32ShrU{}, nil
+	case I32_ROTL:
+		return &I32RotL{}, nil
+	case I32_ROTR:
+		return &I32RotR{}, nil
 	// case I64_CLZ:
 	// case I64_CTZ:
 	// case I64_POPCNT:
@@ -293,10 +297,14 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I64Xor{}, nil
 	case I64_SHL:
 		return &I64Shl{}, nil
-	// case I64_SHR_S:
-	// case I64_SHR_U:
-	// case I64_ROTL:
-	// case I64_ROTR:
+	case I64_SHR_S:
+		return &I64ShrS{}, nil
+	case I64_SHR_U:
+		return &I64ShrU{}, nil
+	case I64_ROTL:
+		return &I64RotL{}, nil
+	case I64_ROTR:
+		return &I64RotR{}, nil
 	// case F32_ABS:
 	// case F32_NEG:
 	// case F32_CEIL:

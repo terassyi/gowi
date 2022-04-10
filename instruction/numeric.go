@@ -307,3 +307,115 @@ func (*I64Shl) imm() any {
 func (*I64Shl) String() string {
 	return "i64.shl"
 }
+
+type I32ShrU struct{}
+
+func (*I32ShrU) Opcode() Opcode {
+	return I32_SHR_U
+}
+
+func (*I32ShrU) imm() any {
+	return NoImm
+}
+
+func (*I32ShrU) String() string {
+	return "i32.shr_u"
+}
+
+type I64ShrU struct{}
+
+func (*I64ShrU) Opcode() Opcode {
+	return I64_SHR_U
+}
+
+func (*I64ShrU) imm() any {
+	return NoImm
+}
+
+func (*I64ShrU) String() string {
+	return "i64.shr_u"
+}
+
+type I32ShrS struct{}
+
+func (*I32ShrS) Opcode() Opcode {
+	return I32_SHR_S
+}
+
+func (*I32ShrS) imm() any {
+	return NoImm
+}
+
+func (*I32ShrS) String() string {
+	return "i32.shr_s"
+}
+
+type I64ShrS struct{}
+
+func (*I64ShrS) Opcode() Opcode {
+	return I64_SHR_S
+}
+
+func (*I64ShrS) imm() any {
+	return NoImm
+}
+
+func (*I64ShrS) String() string {
+	return "i64.shr_s"
+}
+
+type I32RotR struct{}
+
+func (*I32RotR) Opcode() Opcode {
+	return I32_ROTR
+}
+
+func (*I32RotR) imm() any {
+	return NoImm
+}
+
+func (*I32RotR) String() string {
+	return "i32.rotr"
+}
+
+type I64RotR struct{}
+
+func (*I64RotR) Opcode() Opcode {
+	return I64_ROTR
+}
+
+func (*I64RotR) imm() any {
+	return NoImm
+}
+
+func (*I64RotR) String() string {
+	return "i64.rotr"
+}
+
+type I32RotL struct{}
+
+func (*I32RotL) Opcode() Opcode {
+	return I32_ROTL
+}
+
+func (*I32RotL) imm() any {
+	return NoImm
+}
+
+func (*I32RotL) String() string {
+	return "i32.rotl"
+}
+
+type I64RotL struct{}
+
+func (*I64RotL) Opcode() Opcode {
+	return I64_ROTL
+}
+
+func (*I64RotL) imm() any {
+	return NoImm
+}
+
+func (*I64RotL) String() string {
+	return "i64.rotl"
+}

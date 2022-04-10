@@ -26,7 +26,9 @@ var (
 )
 
 const (
-	MOD_32 uint64 = 1 << 32
+	MOD_32     uint64 = 1 << 32
+	BITMASK_32 uint32 = 0xffff_ffff
+	BITMASK_64 uint64 = 0xffff_ffff_ffff_ffff
 )
 
 type instructionResult uint8
@@ -629,6 +631,38 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 		if err := i.binop(value.NumTypeI64, shl); err != nil {
 			return instructionResultTrap, err
 		}
+	case instruction.I32_SHR_U:
+		if err := i.binop(value.NumTypeI32, shru); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_SHR_U:
+		if err := i.binop(value.NumTypeI64, shru); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_SHR_S:
+		if err := i.binop(value.NumTypeI32, shrs); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_SHR_S:
+		if err := i.binop(value.NumTypeI64, shrs); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_ROTL:
+		if err := i.binop(value.NumTypeI32, rotl); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_ROTL:
+		if err := i.binop(value.NumTypeI64, rotl); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_ROTR:
+		if err := i.binop(value.NumTypeI32, rotr); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_ROTR:
+		if err := i.binop(value.NumTypeI64, rotr); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
@@ -879,6 +913,82 @@ func shl(a, b value.Number) (value.Number, error) {
 		k := value.GetNum[value.I64](b).Unsigned()
 		v := value.GetNum[value.I64](a).Unsigned()
 		return value.I64(v << (k % 64)), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func shru(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ishr-u-mathrm-ishr-u-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		k := value.GetNum[value.I32](b).Unsigned()
+		v := value.GetNum[value.I32](a).Unsigned()
+		return value.I32(v >> (k % 32)), nil
+	case value.NumTypeI64:
+		k := value.GetNum[value.I64](b).Unsigned()
+		v := value.GetNum[value.I64](a).Unsigned()
+		return value.I64(v >> (k % 64)), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func shrs(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ishr-s-mathrm-ishr-s-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		k := value.GetNum[value.I32](b).Unsigned()
+		v := value.GetNum[value.I32](a).Signed()
+		return value.I32(v >> (k % 32)), nil
+	case value.NumTypeI64:
+		k := value.GetNum[value.I64](b).Unsigned()
+		v := value.GetNum[value.I64](a).Signed()
+		return value.I64(v >> (k % 64)), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func rotl(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-irotl-mathrm-irotl-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned() % 32
+		return value.I32((i1 << i2) | (i1 >> (32 - i2))), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned() % 64
+		return value.I64((i1 << i2) | (i1 >> (64 - i2))), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func rotr(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-irotr-mathrm-irotr-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned() % 32
+		return value.I32((i1 >> i2) | (i1 << (32 - i2))), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned() % 64
+		return value.I64((i1 >> i2) | (i1 << (64 - i2))), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
