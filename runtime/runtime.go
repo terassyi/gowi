@@ -253,7 +253,11 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		instruction.I32_AND, instruction.I64_AND,
 		instruction.I32_OR, instruction.I64_OR,
 		instruction.I32_XOR, instruction.I64_XOR,
-		instruction.I32_SHL, instruction.I64_SHL:
+		instruction.I32_SHL, instruction.I64_SHL,
+		instruction.I32_SHR_U, instruction.I64_SHR_U,
+		instruction.I32_SHR_S, instruction.I64_SHR_S,
+		instruction.I32_ROTL, instruction.I64_ROTL,
+		instruction.I32_ROTR, instruction.I64_ROTR:
 		return i.execBinop(instr)
 	case instruction.CALL:
 		return i.execCall(instr)

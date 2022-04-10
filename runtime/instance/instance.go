@@ -31,7 +31,7 @@ func GetRef[T ReferenceTypeSet](r value.Reference) T {
 }
 
 type ValueTypeSet interface {
-	~int32 | ~int64 | ~float32 | ~float64 | *Function | value.Vector
+	~uint32 | ~uint64 | ~int32 | ~int64 | ~float32 | ~float64 | *Function | value.Vector
 }
 
 func GetVal[T ValueTypeSet](v value.Value) T {

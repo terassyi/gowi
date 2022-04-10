@@ -17,7 +17,7 @@ type Number interface {
 }
 
 type NumberTypeSet interface {
-	~int32 | ~int64 | ~float32 | ~float64
+	~uint32 | ~uint64 | ~int32 | ~int64 | ~float32 | ~float64
 }
 
 type Reference interface {
@@ -59,7 +59,15 @@ const (
 	ValTypeRef ValueType = 2
 )
 
-type I32 int32
+type I32 uint32
+
+func NewI32[T int32 | uint32](val T) I32 {
+	var v uint32
+	buff := bytes.NewBuffer(make([]byte, 0, 4))
+	binary.Write(buff, binary.BigEndian, val)
+	binary.Read(buff, binary.BigEndian, &v)
+	return I32(v)
+}
 
 func (I32) NumType() NumberType {
 	return NumTypeI32
@@ -80,23 +88,39 @@ func (I32) ValidateValueType(v types.ValueType) bool {
 	return false
 }
 
-func (I32) ExpectNumber() (NumberType, error) {
-	return NumTypeI32, nil
-}
-
-func (i I32) ToUint32() (uint32, error) {
+func (i I32) Signed() int32 {
+	var v int32
 	buff := bytes.NewBuffer(make([]byte, 0, 4))
-	if err := binary.Write(buff, binary.BigEndian, int32(i)); err != nil {
-		return 0, fmt.Errorf("ToUint32: %w", err)
-	}
-	var v uint32
-	if err := binary.Read(buff, binary.BigEndian, &v); err != nil {
-		return 0, fmt.Errorf("ToUint32: %w", err)
-	}
-	return v, nil
+	binary.Write(buff, binary.BigEndian, uint32(i))
+	binary.Read(buff, binary.BigEndian, &v)
+	return v
 }
 
-type I64 int64
+func (i I32) Unsigned() uint32 {
+	return uint32(i)
+}
+
+type I64 uint64
+
+func NewI64[T int64 | uint64](val T) I64 {
+	var v uint64
+	buff := bytes.NewBuffer(make([]byte, 0, 8))
+	binary.Write(buff, binary.BigEndian, val)
+	binary.Read(buff, binary.BigEndian, &v)
+	return I64(v)
+}
+
+func (i I64) Unsigned() uint64 {
+	return uint64(i)
+}
+
+func (i I64) Signed() int64 {
+	var v int64
+	buff := bytes.NewBuffer(make([]byte, 0, 8))
+	binary.Write(buff, binary.BigEndian, uint64(i))
+	binary.Read(buff, binary.BigEndian, &v)
+	return v
+}
 
 func (I64) NumType() NumberType {
 	return NumTypeI64
