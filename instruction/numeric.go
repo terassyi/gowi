@@ -419,3 +419,283 @@ func (*I64RotL) imm() any {
 func (*I64RotL) String() string {
 	return "i64.rotl"
 }
+
+type I32Eq struct{}
+
+func (*I32Eq) Opcode() Opcode {
+	return I32_EQ
+}
+
+func (*I32Eq) imm() any {
+	return NoImm
+}
+
+func (*I32Eq) String() string {
+	return "i32.eq"
+}
+
+type I64Eq struct{}
+
+func (*I64Eq) Opcode() Opcode {
+	return I64_EQ
+}
+
+func (*I64Eq) imm() any {
+	return NoImm
+}
+
+func (*I64Eq) String() string {
+	return "i64.eq"
+}
+
+type I32Ne struct{}
+
+func (*I32Ne) Opcode() Opcode {
+	return I32_NE
+}
+
+func (*I32Ne) imm() any {
+	return NoImm
+}
+
+func (*I32Ne) String() string {
+	return "i32.ne"
+}
+
+type I64Ne struct{}
+
+func (*I64Ne) Opcode() Opcode {
+	return I64_NE
+}
+
+func (*I64Ne) imm() any {
+	return NoImm
+}
+
+func (*I64Ne) String() string {
+	return "i64.ne"
+}
+
+type I32LtU struct{}
+
+func (*I32LtU) Opcode() Opcode {
+	return I32_LT_U
+}
+
+func (*I32LtU) imm() any {
+	return NoImm
+}
+
+func (*I32LtU) String() string {
+	return "i32.lt_u"
+}
+
+type I64LtU struct{}
+
+func (*I64LtU) Opcode() Opcode {
+	return I64_LT_U
+}
+
+func (*I64LtU) imm() any {
+	return NoImm
+}
+
+func (*I64LtU) String() string {
+	return "i64.lt_u"
+}
+
+type I32LtS struct{}
+
+func (*I32LtS) Opcode() Opcode {
+	return I32_LT_S
+}
+
+func (*I32LtS) imm() any {
+	return NoImm
+}
+
+func (*I32LtS) String() string {
+	return "i32.lt_s"
+}
+
+type I64LtS struct{}
+
+func (*I64LtS) Opcode() Opcode {
+	return I64_LT_S
+}
+
+func (*I64LtS) imm() any {
+	return NoImm
+}
+
+func (*I64LtS) String() string {
+	return "i64.lt_s"
+}
+
+type I32GtS struct{}
+
+func (*I32GtS) Opcode() Opcode {
+	return I32_GT_S
+}
+
+func (*I32GtS) imm() any {
+	return NoImm
+}
+
+func (*I32GtS) String() string {
+	return "i32.gt_s"
+}
+
+type I32GtU struct{}
+
+func (*I32GtU) Opcode() Opcode {
+	return I32_GT_U
+}
+
+func (*I32GtU) imm() any {
+	return NoImm
+}
+
+func (*I32GtU) String() string {
+	return "i32.gt_u"
+}
+
+type I64GtS struct{}
+
+func (*I64GtS) Opcode() Opcode {
+	return I64_GT_S
+}
+
+func (*I64GtS) imm() any {
+	return NoImm
+}
+
+func (*I64GtS) String() string {
+	return "i64.gt_s"
+}
+
+type I64GtU struct{}
+
+func (*I64GtU) Opcode() Opcode {
+	return I64_GT_U
+}
+
+func (*I64GtU) imm() any {
+	return NoImm
+}
+
+func (*I64GtU) String() string {
+	return "i64.gt_u"
+}
+
+type I32LeU struct{}
+
+func (*I32LeU) Opcode() Opcode {
+	return I32_LE_U
+}
+
+func (*I32LeU) imm() any {
+	return NoImm
+}
+
+func (*I32LeU) String() string {
+	return "i32.le_u"
+}
+
+type I64LeU struct{}
+
+func (*I64LeU) Opcode() Opcode {
+	return I64_LE_U
+}
+
+func (*I64LeU) imm() any {
+	return NoImm
+}
+
+func (*I64LeU) String() string {
+	return "i64.le_u"
+}
+
+type I32LeS struct{}
+
+func (*I32LeS) Opcode() Opcode {
+	return I32_LE_S
+}
+
+func (*I32LeS) imm() any {
+	return NoImm
+}
+
+func (*I32LeS) String() string {
+	return "i32.le_s"
+}
+
+type I64LeS struct{}
+
+func (*I64LeS) Opcode() Opcode {
+	return I64_LE_S
+}
+
+func (*I64LeS) imm() any {
+	return NoImm
+}
+
+func (*I64LeS) String() string {
+	return "i64.le_s"
+}
+
+type I32GeS struct{}
+
+func (*I32GeS) Opcode() Opcode {
+	return I32_GE_S
+}
+
+func (*I32GeS) imm() any {
+	return NoImm
+}
+
+func (*I32GeS) String() string {
+	return "i32.ge_s"
+}
+
+type I32GeU struct{}
+
+func (*I32GeU) Opcode() Opcode {
+	return I32_GE_U
+}
+
+func (*I32GeU) imm() any {
+	return NoImm
+}
+
+func (*I32GeU) String() string {
+	return "i32.ge_u"
+}
+
+type I64GeS struct{}
+
+func (*I64GeS) Opcode() Opcode {
+	return I64_GE_S
+}
+
+func (*I64GeS) imm() any {
+	return NoImm
+}
+
+func (*I64GeS) String() string {
+	return "i64.ge_s"
+}
+
+type I64GeU struct{}
+
+func (*I64GeU) Opcode() Opcode {
+	return I64_GE_U
+}
+
+func (*I64GeU) imm() any {
+	return NoImm
+}
+
+func (*I64GeU) String() string {
+	return "i64.ge_u"
+}

@@ -206,27 +206,47 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		}
 		return &F64Const{Imm: imm}, nil
 	// case I32_EQZ:
-	// case I32_EQ:
-	// case I32_NE:
-	// case I32_LT_S:
-	// case I32_LT_U:
-	// case I32_GT_S:
-	// case I32_GT_U:
-	// case I32_LE_S:
-	// case I32_LE_U:
-	// case I32_GE_S:
-	// case I32_GE_U:
+	case I32_EQ:
+		return &I32Eq{}, nil
+	case I32_NE:
+		return &I32Ne{}, nil
+	case I32_LT_S:
+		return &I32LtS{}, nil
+	case I32_LT_U:
+		return &I32LtU{}, nil
+	case I32_GT_S:
+		return &I32GtS{}, nil
+	case I32_GT_U:
+		return &I32GtU{}, nil
+	case I32_LE_S:
+		return &I32LeS{}, nil
+	case I32_LE_U:
+		return &I32LeU{}, nil
+	case I32_GE_S:
+		return &I32GeS{}, nil
+	case I32_GE_U:
+		return &I32GeU{}, nil
 	// case I64_EQZ:
-	// case I64_EQ:
-	// case I64_NE:
-	// case I64_LT_S:
-	// case I64_LT_U:
-	// case I64_GT_S:
-	// case I64_GT_U:
-	// case I64_LE_S:
-	// case I64_LE_U:
-	// case I64_GE_S:
-	// case I64_GE_U:
+	case I64_EQ:
+		return &I64Eq{}, nil
+	case I64_NE:
+		return &I64Ne{}, nil
+	case I64_LT_S:
+		return &I64LtS{}, nil
+	case I64_LT_U:
+		return &I64LtU{}, nil
+	case I64_GT_S:
+		return &I64GtS{}, nil
+	case I64_GT_U:
+		return &I64GtU{}, nil
+	case I64_LE_S:
+		return &I64LeS{}, nil
+	case I64_LE_U:
+		return &I64LeU{}, nil
+	case I64_GE_S:
+		return &I64GeS{}, nil
+	case I64_GE_U:
+		return &I64GeU{}, nil
 	// case F32_EQ:
 	// case F32_NE:
 	// case F32_LT:

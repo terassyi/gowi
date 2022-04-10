@@ -257,7 +257,17 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		instruction.I32_SHR_U, instruction.I64_SHR_U,
 		instruction.I32_SHR_S, instruction.I64_SHR_S,
 		instruction.I32_ROTL, instruction.I64_ROTL,
-		instruction.I32_ROTR, instruction.I64_ROTR:
+		instruction.I32_ROTR, instruction.I64_ROTR,
+		instruction.I32_EQ, instruction.I64_EQ,
+		instruction.I32_NE, instruction.I64_NE,
+		instruction.I32_LT_S, instruction.I64_LT_S,
+		instruction.I32_LT_U, instruction.I64_LT_U,
+		instruction.I32_GT_S, instruction.I64_GT_S,
+		instruction.I32_GT_U, instruction.I64_GT_U,
+		instruction.I32_LE_S, instruction.I64_LE_S,
+		instruction.I32_LE_U, instruction.I64_LE_U,
+		instruction.I32_GE_S, instruction.I64_GE_S,
+		instruction.I32_GE_U, instruction.I64_GE_U:
 		return i.execBinop(instr)
 	case instruction.CALL:
 		return i.execCall(instr)

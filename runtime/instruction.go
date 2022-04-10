@@ -663,6 +663,86 @@ func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResul
 		if err := i.binop(value.NumTypeI64, rotr); err != nil {
 			return instructionResultTrap, err
 		}
+	case instruction.I32_EQ:
+		if err := i.binop(value.NumTypeI32, eq); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_EQ:
+		if err := i.binop(value.NumTypeI64, eq); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_NE:
+		if err := i.binop(value.NumTypeI32, ne); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_NE:
+		if err := i.binop(value.NumTypeI64, ne); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_LE_S:
+		if err := i.binop(value.NumTypeI32, les); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_LE_S:
+		if err := i.binop(value.NumTypeI64, les); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_LE_U:
+		if err := i.binop(value.NumTypeI32, leu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_LE_U:
+		if err := i.binop(value.NumTypeI64, leu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_GE_S:
+		if err := i.binop(value.NumTypeI32, ges); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_GE_S:
+		if err := i.binop(value.NumTypeI64, ges); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_GE_U:
+		if err := i.binop(value.NumTypeI32, geu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_GE_U:
+		if err := i.binop(value.NumTypeI64, geu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_LT_S:
+		if err := i.binop(value.NumTypeI32, lts); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_LT_S:
+		if err := i.binop(value.NumTypeI64, lts); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_LT_U:
+		if err := i.binop(value.NumTypeI32, ltu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_LT_U:
+		if err := i.binop(value.NumTypeI64, ltu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_GT_S:
+		if err := i.binop(value.NumTypeI32, gts); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_GT_S:
+		if err := i.binop(value.NumTypeI64, gts); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_GT_U:
+		if err := i.binop(value.NumTypeI32, gtu); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_GT_U:
+		if err := i.binop(value.NumTypeI64, gtu); err != nil {
+			return instructionResultTrap, err
+		}
 	case instruction.F32_ADD:
 	case instruction.F64_ADD:
 	default:
@@ -989,6 +1069,256 @@ func rotr(a, b value.Number) (value.Number, error) {
 		i1 := value.GetNum[value.I64](a).Unsigned()
 		i2 := value.GetNum[value.I64](b).Unsigned() % 64
 		return value.I64((i1 >> i2) | (i1 << (64 - i2))), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func eq(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ieq-mathrm-ieq-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		if i1 == i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		if i1 == i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func ne(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ieq-mathrm-ieq-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		if i1 == i2 {
+			return value.I32(0), nil
+		}
+		return value.I32(1), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		if i1 == i2 {
+			return value.I32(0), nil
+		}
+		return value.I32(1), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func ltu(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ilt-u-mathrm-ilt-u-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		if i1 < i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		if i1 < i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func lts(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ilt-s-mathrm-ilt-s-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Signed()
+		i2 := value.GetNum[value.I32](b).Signed()
+		if i1 < i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Signed()
+		i2 := value.GetNum[value.I64](b).Signed()
+		if i1 < i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func gtu(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-igt-u-mathrm-igt-u-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		if i1 > i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		if i1 > i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func gts(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-igt-s-mathrm-igt-s-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Signed()
+		i2 := value.GetNum[value.I32](b).Signed()
+		if i1 > i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Signed()
+		i2 := value.GetNum[value.I64](b).Signed()
+		if i1 > i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func leu(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ile-u-mathrm-ile-u-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		if i1 <= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		if i1 <= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func les(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ile-s-mathrm-ile-s-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Signed()
+		i2 := value.GetNum[value.I32](b).Signed()
+		if i1 <= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Signed()
+		i2 := value.GetNum[value.I64](b).Signed()
+		if i1 <= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func geu(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ige-u-mathrm-ige-u-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Unsigned()
+		i2 := value.GetNum[value.I32](b).Unsigned()
+		if i1 >= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Unsigned()
+		i2 := value.GetNum[value.I64](b).Unsigned()
+		if i1 >= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func ges(a, b value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ige-s-mathrm-ige-s-n-i-1-i-2
+	if a.NumType() != b.NumType() {
+		return nil, ExecutionErrorArgumentTypeNotMatch
+	}
+	switch a.NumType() {
+	case value.NumTypeI32:
+		i1 := value.GetNum[value.I32](a).Signed()
+		i2 := value.GetNum[value.I32](b).Signed()
+		if i1 >= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		i1 := value.GetNum[value.I64](a).Signed()
+		i2 := value.GetNum[value.I64](b).Signed()
+		if i1 >= i2 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
 	default:
 		return nil, ExecutionErrorOperation
 	}
