@@ -205,7 +205,8 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 			return nil, fmt.Errorf("Instruction(f64_const) decode: %w", err)
 		}
 		return &F64Const{Imm: imm}, nil
-	// case I32_EQZ:
+	case I32_EQZ:
+		return &I32Eqz{}, nil
 	case I32_EQ:
 		return &I32Eq{}, nil
 	case I32_NE:
@@ -226,7 +227,8 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I32GeS{}, nil
 	case I32_GE_U:
 		return &I32GeU{}, nil
-	// case I64_EQZ:
+	case I64_EQZ:
+		return &I64Eqz{}, nil
 	case I64_EQ:
 		return &I64Eq{}, nil
 	case I64_NE:
@@ -259,9 +261,12 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	// case F64_GT:
 	// case F64_LE:
 	// case F64_GE:
-	// case I32_CLZ:
-	// case I32_CTZ:
-	// case I32_POPCNT:
+	case I32_CLZ:
+		return &I32Clz{}, nil
+	case I32_CTZ:
+		return &I32Ctz{}, nil
+	case I32_POPCNT:
+		return &I32Popcnt{}, nil
 	case I32_ADD:
 		return &I32Add{}, nil
 	case I32_SUB:
@@ -292,9 +297,12 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 		return &I32RotL{}, nil
 	case I32_ROTR:
 		return &I32RotR{}, nil
-	// case I64_CLZ:
-	// case I64_CTZ:
-	// case I64_POPCNT:
+	case I64_CLZ:
+		return &I64Clz{}, nil
+	case I64_CTZ:
+		return &I64Ctz{}, nil
+	case I64_POPCNT:
+		return &I64Popcnt{}, nil
 	case I64_ADD:
 		return &I64Add{}, nil
 	case I64_SUB:

@@ -699,3 +699,115 @@ func (*I64GeU) imm() any {
 func (*I64GeU) String() string {
 	return "i64.ge_u"
 }
+
+type I32Eqz struct{}
+
+func (*I32Eqz) Opcode() Opcode {
+	return I32_EQZ
+}
+
+func (*I32Eqz) imm() any {
+	return NoImm
+}
+
+func (*I32Eqz) String() string {
+	return "i32.eqz"
+}
+
+type I64Eqz struct{}
+
+func (*I64Eqz) Opcode() Opcode {
+	return I64_EQZ
+}
+
+func (*I64Eqz) imm() any {
+	return NoImm
+}
+
+func (*I64Eqz) String() string {
+	return "i64.eqz"
+}
+
+type I32Clz struct{}
+
+func (*I32Clz) Opcode() Opcode {
+	return I32_CLZ
+}
+
+func (*I32Clz) imm() any {
+	return NoImm
+}
+
+func (*I32Clz) String() string {
+	return "i32.clz"
+}
+
+type I64Clz struct{}
+
+func (*I64Clz) Opcode() Opcode {
+	return I64_CLZ
+}
+
+func (*I64Clz) imm() any {
+	return NoImm
+}
+
+func (*I64Clz) String() string {
+	return "i64.clz"
+}
+
+type I32Ctz struct{}
+
+func (*I32Ctz) Opcode() Opcode {
+	return I32_CTZ
+}
+
+func (*I32Ctz) imm() any {
+	return NoImm
+}
+
+func (*I32Ctz) String() string {
+	return "i32.ctz"
+}
+
+type I64Ctz struct{}
+
+func (*I64Ctz) Opcode() Opcode {
+	return I64_CTZ
+}
+
+func (*I64Ctz) imm() any {
+	return NoImm
+}
+
+func (*I64Ctz) String() string {
+	return "i64.ctz"
+}
+
+type I32Popcnt struct{}
+
+func (*I32Popcnt) Opcode() Opcode {
+	return I32_POPCNT
+}
+
+func (*I32Popcnt) imm() any {
+	return NoImm
+}
+
+func (*I32Popcnt) String() string {
+	return "i32.popcnt"
+}
+
+type I64Popcnt struct{}
+
+func (*I64Popcnt) Opcode() Opcode {
+	return I64_POPCNT
+}
+
+func (*I64Popcnt) imm() any {
+	return NoImm
+}
+
+func (*I64Popcnt) String() string {
+	return "i64.popcnt"
+}

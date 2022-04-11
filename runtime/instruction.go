@@ -509,8 +509,44 @@ func (i *interpreter) teeLocal(index uint32, frame *stack.Frame) error {
 	return i.setLocal(index, frame)
 }
 
-func (i *interpreter) execUnop(isntr instruction.Instruction) error {
-	return nil
+func (i *interpreter) execUnop(instr instruction.Instruction) (instructionResult, error) {
+	switch instr.Opcode() {
+	case instruction.I32_EQZ:
+		if err := i.unop(value.NumTypeI32, eqz); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_EQZ:
+		if err := i.unop(value.NumTypeI64, eqz); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_CLZ:
+		if err := i.unop(value.NumTypeI32, clz); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_CLZ:
+		if err := i.unop(value.NumTypeI64, clz); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_CTZ:
+		if err := i.unop(value.NumTypeI32, ctz); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_CTZ:
+		if err := i.unop(value.NumTypeI64, ctz); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I32_POPCNT:
+		if err := i.unop(value.NumTypeI32, popcnt); err != nil {
+			return instructionResultTrap, err
+		}
+	case instruction.I64_POPCNT:
+		if err := i.unop(value.NumTypeI64, popcnt); err != nil {
+			return instructionResultTrap, err
+		}
+	default:
+		return instructionResultTrap, instruction.NotImplemented
+	}
+	return instructionResultRunNext, nil
 }
 
 type unopFunc func(value.Number) (value.Number, error)
@@ -518,24 +554,24 @@ type unopFunc func(value.Number) (value.Number, error)
 func (i *interpreter) unop(valType value.NumberType, f unopFunc) error {
 	v, err := i.stack.Value.Top()
 	if err != nil {
-		return fmt.Errorf("binop: %w", err)
+		return fmt.Errorf("unop: %w", err)
 	}
 	if v.ValType() != value.ValTypeNum {
-		return fmt.Errorf("binop: %w", ExecutionErrorTypeNotMatched)
+		return fmt.Errorf("unop: %w", ExecutionErrorTypeNotMatched)
 	}
 	if v.(value.Number).NumType() != valType {
-		return fmt.Errorf("binop: %w", ExecutionErrorArgumentTypeNotMatch)
+		return fmt.Errorf("unop: %w", ExecutionErrorArgumentTypeNotMatch)
 	}
 	val, err := i.stack.PopValue()
 	if err != nil {
-		return fmt.Errorf("binop: %w", err)
+		return fmt.Errorf("unop: %w", err)
 	}
 	res, err := f(val.(value.Number))
 	if err != nil {
-		return fmt.Errorf("binop: %w", err)
+		return fmt.Errorf("unop: %w", err)
 	}
 	if err := i.stack.PushValue(res.ToValue()); err != nil {
-		return fmt.Errorf("binop: %w", err)
+		return fmt.Errorf("unop: %w", err)
 	}
 	return nil
 }
@@ -1322,4 +1358,98 @@ func ges(a, b value.Number) (value.Number, error) {
 	default:
 		return nil, ExecutionErrorOperation
 	}
+}
+
+func eqz(a value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ieqz-mathrm-ieqz-n-i
+	switch a.NumType() {
+	case value.NumTypeI32:
+		if value.GetNum[value.I32](a).Unsigned() == 0 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	case value.NumTypeI64:
+		if value.GetNum[value.I64](a).Unsigned() == 0 {
+			return value.I32(1), nil
+		}
+		return value.I32(0), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func clz(a value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-iclz-mathrm-iclz-n-i
+	switch a.NumType() {
+	case value.NumTypeI32:
+		for i := 31; i >= 0; i-- {
+			if bits(value.GetNum[value.I32](a).Unsigned(), i) {
+				return value.I32(uint32(31 - i)), nil
+			}
+		}
+		return value.I32(32), nil
+	case value.NumTypeI64:
+		for i := 63; i >= 0; i-- {
+			if bits(value.GetNum[value.I64](a).Unsigned(), i) {
+				return value.I64(uint64(63 - i)), nil
+			}
+		}
+		return value.I64(64), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func ctz(a value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ictz-mathrm-ictz-n-i
+	switch a.NumType() {
+	case value.NumTypeI32:
+		for i := 0; i < 32; i++ {
+			if bits(value.GetNum[value.I32](a).Unsigned(), i) {
+				return value.I32(i), nil
+			}
+		}
+		return value.I32(32), nil
+	case value.NumTypeI64:
+		for i := 0; i < 64; i++ {
+			if bits(value.GetNum[value.I64](a).Unsigned(), i) {
+				return value.I64(i), nil
+			}
+		}
+		return value.I64(64), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func popcnt(a value.Number) (value.Number, error) {
+	// https://webassembly.github.io/spec/core/exec/numerics.html#xref-exec-numerics-op-ipopcnt-mathrm-ipopcnt-n-i
+	switch a.NumType() {
+	case value.NumTypeI32:
+		cnt := 0
+		for i := 0; i < 32; i++ {
+			if bits(value.GetNum[value.I32](a).Unsigned(), i) {
+				cnt++
+			}
+		}
+		return value.I32(cnt), nil
+	case value.NumTypeI64:
+		cnt := 0
+		for i := 0; i < 64; i++ {
+			if bits(value.GetNum[value.I64](a).Unsigned(), i) {
+				cnt++
+			}
+		}
+		return value.I64(cnt), nil
+	default:
+		return nil, ExecutionErrorOperation
+	}
+}
+
+func bits[T ~uint32 | ~uint64](v T, n int) bool {
+	var mask T = 1 << n
+	if v&mask == 0 {
+		return false
+	}
+	return true
 }
