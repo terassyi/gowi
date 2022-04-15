@@ -278,6 +278,18 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execCall(instr)
 	case instruction.END:
 		return i.execLabelEnd(instr)
+	case instruction.I32_LOAD, instruction.I64_LOAD,
+		instruction.I32_LOAD8_S, instruction.I64_LOAD8_S,
+		instruction.I32_LOAD8_U, instruction.I64_LOAD8_U,
+		instruction.I32_LOAD16_S, instruction.I64_LOAD16_S,
+		instruction.I32_LOAD16_U, instruction.I64_LOAD16_U,
+		instruction.I64_LOAD32_S, instruction.I64_LOAD32_U:
+		return i.execLoad(instr)
+	case instruction.I32_STORE, instruction.I64_STORE,
+		instruction.I32_STORE8, instruction.I64_STORE8,
+		instruction.I32_STORE16, instruction.I64_STORE16,
+		instruction.I64_STORE32:
+		return i.execStore(instr)
 	default:
 		// return instruction.InvalidOpcode
 		return instructionResultTrap, nil

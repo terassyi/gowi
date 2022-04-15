@@ -156,29 +156,124 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 			return nil, fmt.Errorf("Instruction(set_global) decode: %w", err)
 		}
 		return &SetGlobal{Imm: uint32(imm)}, nil
-	// case I32_LOAD:
-	// case I64_LOAD:
+	case I32_LOAD:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.load): %w", err)
+		}
+		return &I32Load{Imm: *imm}, nil
+	case I64_LOAD:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load): %w", err)
+		}
+		return &I64Load{Imm: *imm}, nil
 	// case F32_LOAD:
 	// case F64_LOAD:
-	// case I32_LOAD8_S:
-	// case I32_LOAD8_U:
-	// case I32_LOAD16_S:
-	// case I32_LOAD16_U:
-	// case I64_LOAD8_S:
-	// case I64_LOAD8_U:
-	// case I64_LOAD16_S:
-	// case I64_LOAD16_U:
-	// case I64_LOAD32_S:
-	// case I64_LOAD32_U:
-	// case I32_STORE:
-	// case I64_STORE:
+	case I32_LOAD8_S:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.load8_s): %w", err)
+		}
+		return &I32Load8S{Imm: *imm}, nil
+	case I32_LOAD8_U:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.load8_u): %w", err)
+		}
+		return &I32Load8U{Imm: *imm}, nil
+	case I32_LOAD16_S:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.load16_s): %w", err)
+		}
+		return &I32Load16S{Imm: *imm}, nil
+	case I32_LOAD16_U:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.load16_u): %w", err)
+		}
+		return &I32Load16U{Imm: *imm}, nil
+	case I64_LOAD8_S:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load8_s): %w", err)
+		}
+		return &I64Load8S{Imm: *imm}, nil
+	case I64_LOAD8_U:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load8_u): %w", err)
+		}
+		return &I64Load8U{Imm: *imm}, nil
+	case I64_LOAD16_S:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load16_s): %w", err)
+		}
+		return &I64Load16S{Imm: *imm}, nil
+	case I64_LOAD16_U:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load16_u): %w", err)
+		}
+		return &I64Load16U{Imm: *imm}, nil
+	case I64_LOAD32_S:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load32_s): %w", err)
+		}
+		return &I64Load32S{Imm: *imm}, nil
+	case I64_LOAD32_U:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.load32_u): %w", err)
+		}
+		return &I64Load32U{Imm: *imm}, nil
+	case I32_STORE:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.store): %w", err)
+		}
+		return &I32Store{Imm: *imm}, nil
+	case I64_STORE:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.store): %w", err)
+		}
+		return &I64Store{Imm: *imm}, nil
 	// case F32_STORE:
 	// case F64_STORE:
-	// case I32_STORE8:
-	// case I32_STORE16:
-	// case I64_STORE8:
-	// case I64_STORE16:
-	// case I64_STORE32:
+	case I32_STORE8:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.store8): %w", err)
+		}
+		return &I32Store8{Imm: *imm}, nil
+	case I32_STORE16:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i32.store16): %w", err)
+		}
+		return &I32Store16{Imm: *imm}, nil
+	case I64_STORE8:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.store8): %w", err)
+		}
+		return &I64Store8{Imm: *imm}, nil
+	case I64_STORE16:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.store16): %w", err)
+		}
+		return &I64Store16{Imm: *imm}, nil
+	case I64_STORE32:
+		imm, err := newMemImm(buf)
+		if err != nil {
+			return nil, fmt.Errorf("Instruction(i64.store32): %w", err)
+		}
+		return &I64Store32{Imm: *imm}, nil
 	// case CURRENT_MEMORY:
 	// case GROW_MEMORY:
 	case I32_CONST:

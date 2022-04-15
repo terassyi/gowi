@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -1452,4 +1454,27 @@ func bits[T ~uint32 | ~uint64](v T, n int) bool {
 		return false
 	}
 	return true
+}
+
+func extendu[T, V uint8 | uint16 | uint32 | uint64](i T) V {
+	return V(i)
+}
+
+func extends[T, V int8 | int16 | int32 | int64](i T) V {
+	return V(i)
+}
+
+func signed[T uint8 | uint16 | uint32 | uint64, V int8 | int16 | int32 | int64](i T) V {
+	var v V
+	b := bytes.NewBuffer(make([]byte, 0, 8))
+	binary.Write(b, binary.BigEndian, i)
+	binary.Read(b, binary.BigEndian, &v)
+	return v
+}
+
+func bytesToVal[T uint8 | uint16 | uint32 | uint64 | int8 | int16 | int32 | int64](b []byte) T {
+	var v T
+	buff := bytes.NewBuffer(b)
+	binary.Read(buff, binary.LittleEndian, &v)
+	return v
 }

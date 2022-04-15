@@ -29,7 +29,7 @@ func TestValidateLocals(t *testing.T) {
 	}
 }
 
-func TestInvoke(t *testing.T) {
+func TestInvoke_Numeric(t *testing.T) {
 	for _, d := range []struct {
 		path   string
 		export string
@@ -476,6 +476,35 @@ func TestInvoke(t *testing.T) {
 		{path: "../examples/i64.wasm", export: "popcnt", args: []value.Value{value.I64(0xAAAAAAAA55555555)}, exp: []value.Value{value.I64(32)}},
 		{path: "../examples/i64.wasm", export: "popcnt", args: []value.Value{value.I64(0x99999999AAAAAAAA)}, exp: []value.Value{value.I64(32)}},
 		{path: "../examples/i64.wasm", export: "popcnt", args: []value.Value{value.I64(0xDEADBEEFDEADBEEF)}, exp: []value.Value{value.I64(48)}},
+	} {
+		dec, err := decoder.New(d.path)
+		require.NoError(t, err)
+		mod, err := dec.Decode()
+		v, err := validator.New(mod)
+		require.NoError(t, err)
+		_, err = v.Validate()
+		require.NoError(t, err)
+		ins, err := instance.New(mod)
+		require.NoError(t, err)
+		interpreter := &interpreter{
+			instance: ins,
+			stack:    stack.New(),
+			cur:      &current{},
+			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+		}
+		res, err := interpreter.Invoke(d.export, d.args)
+		require.NoError(t, err)
+		assert.Equal(t, d.exp, res)
+	}
+}
+
+func TestInvoke_ControlFlow(t *testing.T) {
+	for _, d := range []struct {
+		path   string
+		export string
+		args   []value.Value
+		exp    []value.Value
+	}{
 		// control flow
 		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(0), value.I32(2)}, exp: []value.Value{value.I32(2)}},
 		{path: "../examples/func1.wasm", export: "add", args: []value.Value{value.I32(13), value.I32(27)}, exp: []value.Value{value.I32(40)}},
@@ -574,6 +603,9 @@ func TestInvoke(t *testing.T) {
 		{path: "../examples/return.wasm", export: "as-call-first", args: []value.Value{}, exp: []value.Value{value.I32(12)}},
 		{path: "../examples/return.wasm", export: "as-call-mid", args: []value.Value{}, exp: []value.Value{value.I32(13)}},
 		{path: "../examples/return.wasm", export: "as-call-last", args: []value.Value{}, exp: []value.Value{value.I32(14)}},
+		// memory related
+		{path: "../examples/load.wasm", export: "as-br-value", args: []value.Value{}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-br_if-cond", args: []value.Value{}, exp: []value.Value{}},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)
@@ -596,6 +628,96 @@ func TestInvoke(t *testing.T) {
 	}
 }
 
+func TestInvoke_MemoryRelated(t *testing.T) {
+	for _, d := range []struct {
+		path   string
+		export string
+		args   []value.Value
+		exp    []value.Value
+	}{
+		// memory related
+		{path: "../examples/load.wasm", export: "as-br-value", args: []value.Value{}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-br_if-cond", args: []value.Value{}, exp: []value.Value{}},
+		{path: "../examples/load.wasm", export: "as-br_if-value", args: []value.Value{}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-br_if-value-cond", args: []value.Value{}, exp: []value.Value{value.I32(7)}},
+		{path: "../examples/load.wasm", export: "as-return-value", args: []value.Value{}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-if-cond", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/load.wasm", export: "as-if-then", args: []value.Value{}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-if-else", args: []value.Value{}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-select-first", args: []value.Value{value.I32(0), value.I32(1)}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-select-second", args: []value.Value{value.I32(0), value.I32(0)}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/load.wasm", export: "as-select-cond", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/load.wasm", export: "as-call-first", args: []value.Value{}, exp: []value.Value{value.NewI32(int32(-1))}},
+		{path: "../examples/load.wasm", export: "as-call-mid", args: []value.Value{}, exp: []value.Value{value.NewI32(int32(-1))}},
+		{path: "../examples/load.wasm", export: "as-call-last", args: []value.Value{}, exp: []value.Value{value.NewI32(int32(-1))}},
+		{path: "../examples/load.wasm", export: "as-unary-operand", args: []value.Value{}, exp: []value.Value{value.I32(32)}},
+		{path: "../examples/load.wasm", export: "as-binary-right", args: []value.Value{}, exp: []value.Value{value.I32(10)}},
+		{path: "../examples/load.wasm", export: "as-binary-left", args: []value.Value{}, exp: []value.Value{value.I32(10)}},
+		{path: "../examples/load.wasm", export: "as-test-operand", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/load.wasm", export: "as-compare-left", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/load.wasm", export: "as-compare-right", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
+
+		{path: "../examples/memory.wasm", export: "data", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_s", args: []value.Value{value.NewI32(int32(-1))}, exp: []value.Value{value.NewI32(int32(-1))}},
+		{path: "../examples/memory.wasm", export: "i32_load8_s", args: []value.Value{value.I32(100)}, exp: []value.Value{value.I32(100)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_s", args: []value.Value{value.I32(0xfedc6543)}, exp: []value.Value{value.I32(0x43)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_s", args: []value.Value{value.I32(0x3456cdef)}, exp: []value.Value{value.I32(0xffffffef)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_u", args: []value.Value{value.NewI32(int32(-1))}, exp: []value.Value{value.I32(255)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_u", args: []value.Value{value.I32(200)}, exp: []value.Value{value.I32(200)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_u", args: []value.Value{value.I32(0xfedc6543)}, exp: []value.Value{value.I32(0x43)}},
+		{path: "../examples/memory.wasm", export: "i32_load8_u", args: []value.Value{value.I32(0x3456cdef)}, exp: []value.Value{value.I32(0xef)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_s", args: []value.Value{value.NewI32(int32(-1))}, exp: []value.Value{value.NewI32(int32(-1))}},
+		{path: "../examples/memory.wasm", export: "i32_load16_s", args: []value.Value{value.I32(20000)}, exp: []value.Value{value.I32(20000)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_s", args: []value.Value{value.I32(0xfedc6543)}, exp: []value.Value{value.I32(0x6543)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_s", args: []value.Value{value.I32(0x3456cdef)}, exp: []value.Value{value.I32(0xffffcdef)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_u", args: []value.Value{value.NewI32(int32(-1))}, exp: []value.Value{value.I32(65535)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_u", args: []value.Value{value.I32(40000)}, exp: []value.Value{value.I32(40000)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_u", args: []value.Value{value.I32(0xfedc6543)}, exp: []value.Value{value.I32(0x6543)}},
+		{path: "../examples/memory.wasm", export: "i32_load16_u", args: []value.Value{value.I32(0x3456cdef)}, exp: []value.Value{value.I32(0xcdef)}},
+		{path: "../examples/memory.wasm", export: "i64_load8_s", args: []value.Value{value.NewI64(int64(-1))}, exp: []value.Value{value.NewI64(int64(-1))}},
+		{path: "../examples/memory.wasm", export: "i64_load8_s", args: []value.Value{value.I64(100)}, exp: []value.Value{value.I64(100)}},
+		{path: "../examples/memory.wasm", export: "i64_load8_s", args: []value.Value{value.I64(0xfedcba9856346543)}, exp: []value.Value{value.I64(0x43)}},
+		{path: "../examples/memory.wasm", export: "i64_load8_s", args: []value.Value{value.I64(0x3456436598bacdef)}, exp: []value.Value{value.I64(0xffffffffffffffef)}},
+		{path: "../examples/memory.wasm", export: "i64_load8_u", args: []value.Value{value.I64(200)}, exp: []value.Value{value.I64(200)}},
+		{path: "../examples/memory.wasm", export: "i64_load8_u", args: []value.Value{value.I64(0xfedcba9856346543)}, exp: []value.Value{value.I64(0x43)}},
+		{path: "../examples/memory.wasm", export: "i64_load8_u", args: []value.Value{value.I64(0x3456436598bacdef)}, exp: []value.Value{value.I64(0xef)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_s", args: []value.Value{value.NewI64(int64(-1))}, exp: []value.Value{value.NewI64(int64(-1))}},
+		{path: "../examples/memory.wasm", export: "i64_load16_s", args: []value.Value{value.I64(20000)}, exp: []value.Value{value.I64(20000)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_s", args: []value.Value{value.I64(0xfedcba9856346543)}, exp: []value.Value{value.I64(0x6543)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_s", args: []value.Value{value.I64(0x3456436598bacdef)}, exp: []value.Value{value.I64(0xffffffffffffcdef)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_u", args: []value.Value{value.NewI64(int64(-1))}, exp: []value.Value{value.I64(65535)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_u", args: []value.Value{value.I64(40000)}, exp: []value.Value{value.I64(40000)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_u", args: []value.Value{value.I64(0xfedcba9856346543)}, exp: []value.Value{value.I64(0x6543)}},
+		{path: "../examples/memory.wasm", export: "i64_load16_u", args: []value.Value{value.I64(0x3456436598bacdef)}, exp: []value.Value{value.I64(0xcdef)}},
+		{path: "../examples/memory.wasm", export: "i64_load32_s", args: []value.Value{value.NewI64(int64(-1))}, exp: []value.Value{value.NewI64(int64(-1))}},
+		{path: "../examples/memory.wasm", export: "i64_load32_s", args: []value.Value{value.I64(20000)}, exp: []value.Value{value.I64(20000)}},
+		{path: "../examples/memory.wasm", export: "i64_load32_s", args: []value.Value{value.I64(0xfedcba9856346543)}, exp: []value.Value{value.I64(0x56346543)}},
+		{path: "../examples/memory.wasm", export: "i64_load32_s", args: []value.Value{value.I64(0x3456436598bacdef)}, exp: []value.Value{value.I64(0xffffffff98bacdef)}},
+		{path: "../examples/memory.wasm", export: "i64_load32_u", args: []value.Value{value.NewI64(int64(-1))}, exp: []value.Value{value.NewI64(int64(4294967295))}},
+		{path: "../examples/memory.wasm", export: "i64_load32_u", args: []value.Value{value.I64(40000)}, exp: []value.Value{value.I64(40000)}},
+		{path: "../examples/memory.wasm", export: "i64_load32_u", args: []value.Value{value.I64(0xfedcba9856346543)}, exp: []value.Value{value.I64(0x56346543)}},
+		{path: "../examples/memory.wasm", export: "i64_load32_u", args: []value.Value{value.I64(0x3456436598bacdef)}, exp: []value.Value{value.I64(0x98bacdef)}},
+	} {
+		dec, err := decoder.New(d.path)
+		require.NoError(t, err)
+		mod, err := dec.Decode()
+		v, err := validator.New(mod)
+		require.NoError(t, err)
+		_, err = v.Validate()
+		require.NoError(t, err)
+		ins, err := instance.New(mod)
+		require.NoError(t, err)
+		interpreter := &interpreter{
+			instance: ins,
+			stack:    stack.New(),
+			cur:      &current{},
+			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+		}
+		res, err := interpreter.Invoke(d.export, d.args)
+		require.NoError(t, err)
+		assert.Equal(t, d.exp, res)
+	}
+}
 func TestStep(t *testing.T) {
 	for _, d := range []struct {
 		interpreter *interpreter
