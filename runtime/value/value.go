@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 	"unsafe"
 
 	"github.com/terassyi/gowi/types"
@@ -259,4 +260,78 @@ type ResultTypeSet interface {
 
 func GetResult[T ResultTypeSet](r Result) T {
 	return r.(T)
+}
+
+func FromString(val string, typ types.ValueType) (Value, error) {
+	switch typ {
+	case types.I32:
+		if isNeg(val) {
+			v, err := strconv.ParseInt(val, 10, 32)
+			if err != nil {
+				return nil, err
+			}
+			return NewI32(int32(v)), nil
+		}
+		base := baseNum(val)
+		v, err := strconv.ParseUint(trimBase(val, base), base, 32)
+		if err != nil {
+			return nil, err
+		}
+		return NewI32(int32(v)), nil
+	case types.I64:
+		if isNeg(val) {
+			v, err := strconv.ParseInt(val, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			return NewI64(v), nil
+		}
+		base := baseNum(val)
+		v, err := strconv.ParseUint(trimBase(val, base), base, 64)
+		if err != nil {
+			return nil, err
+		}
+		return NewI64(v), nil
+	case types.F32:
+		return nil, types.NotImplemented
+	case types.F64:
+		return nil, types.NotImplemented
+	case types.V128:
+		return nil, types.NotImplemented
+	default:
+		return nil, types.InvalidValueType
+	}
+}
+
+func isNeg(s string) bool {
+	if string(s[0]) == "-" {
+		return true
+	}
+	return false
+}
+
+func baseNum(s string) int {
+	if len(s) < 2 {
+		return 10
+	}
+	base := string(s[:2])
+	switch base {
+	case "0x":
+		return 16
+	case "0b":
+		return 2
+	case "0o":
+		return 8
+	default:
+		return 10
+	}
+}
+
+func trimBase(s string, base int) string {
+	switch base {
+	case 16, 8, 2:
+		return string(s[2:])
+	default:
+		return s
+	}
 }

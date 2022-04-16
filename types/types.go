@@ -340,6 +340,17 @@ func (r ResultType) IsEmpty() bool {
 	return false
 }
 
+func (r ResultType) String() string {
+	str := ""
+	for _, v := range r {
+		str += fmt.Sprintf("%s, ", v)
+	}
+	if str != "" {
+		return str[:len(str)-2]
+	}
+	return str
+}
+
 type ReferenceType uint32
 
 const (
