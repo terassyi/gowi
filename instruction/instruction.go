@@ -483,7 +483,7 @@ func Decode(buf *bytes.Buffer) (Instruction, error) {
 	// case F32_REINTERPRET_I32:
 	// case F64_REINTERPRET_I64:
 	default:
-		return nil, fmt.Errorf("%w: %x", NotImplemented, opcode)
+		return nil, fmt.Errorf("%w: 0x%x", NotImplemented, opcode)
 	}
 }
 
