@@ -172,13 +172,12 @@ func (i *interpreter) execute() error {
 					return fmt.Errorf("execute: %w", err)
 				}
 				contexSwitch = true
-			case instructionResultReturn:
 			case instructionResultEnterBlock:
 				if err := i.cur.update(i.stack); err != nil {
 					return fmt.Errorf("execute: %w", err)
 				}
 				contexSwitch = true
-			case instructionResultLabelEnd:
+			case instructionResultLabelEnd, instructionResultReturn:
 				if i.isInvocationFinished() {
 					return nil
 				}

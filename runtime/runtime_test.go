@@ -559,7 +559,7 @@ func TestInvoke_ControlFlow(t *testing.T) {
 		{path: "../examples/br_if.wasm", export: "as-block-last", args: []value.Value{}, exp: []value.Value{}},
 		{path: "../examples/br_if.wasm", export: "as-block-first-value", args: []value.Value{}, exp: []value.Value{value.I32(11)}},
 		{path: "../examples/br_if.wasm", export: "as-loop-first", args: []value.Value{}, exp: []value.Value{value.I32(3)}},
-		{path: "../examples/br_if.wasm", export: "as-loop-mid", args: []value.Value{}, exp: []value.Value{value.I32(4)}},
+		{path: "../examples/br_if.wasm", export: "as-loop-mid", args: []value.Value{}, exp: []value.Value{value.I32(2)}},
 		{path: "../examples/br_if.wasm", export: "as-loop-last", args: []value.Value{}, exp: []value.Value{}},
 		{path: "../examples/br_if.wasm", export: "as-br-value", args: []value.Value{}, exp: []value.Value{value.I32(1)}},
 		{path: "../examples/br_if.wasm", export: "as-br_if-cond", args: []value.Value{}, exp: []value.Value{}},

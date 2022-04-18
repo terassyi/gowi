@@ -262,13 +262,22 @@ func (i *interpreter) execReturn(instr instruction.Instruction) (instructionResu
 	if i.stack.Frame.IsEmpty() {
 		return instructionResultTrap, fmt.Errorf("return: the frame stack must have at least one vlaue")
 	}
-	if err := i.restoreStack(); err != nil {
-		return instructionResultTrap, fmt.Errorf("label end: %w", err)
+	if _, err := i.stack.Frame.Pop(); err != nil {
+		return instructionResultTrap, fmt.Errorf("return: %w", err)
+	}
+	for {
+		label, err := i.stack.Label.Pop()
+		if err != nil {
+			return instructionResultTrap, fmt.Errorf("return: %w", err)
+		}
+		if label.Flag {
+			break
+		}
 	}
 	if err := i.cur.update(i.stack); err != nil {
-		return instructionResultTrap, fmt.Errorf("label end: %w", err)
+		return instructionResultTrap, fmt.Errorf("return: %w", err)
 	}
-	return instructionResultLabelEnd, nil
+	return instructionResultReturn, nil
 }
 
 func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, error) {
