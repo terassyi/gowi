@@ -772,6 +772,8 @@ func TestInvoke_Fibonacci(t *testing.T) {
 		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(9)}, exp: []value.Value{value.I32(21)}},
 		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(10)}, exp: []value.Value{value.I32(34)}},
 		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(20)}, exp: []value.Value{value.I32(4181)}},
+		// {path: "../examples/fibonacci.wasm", export: "fib_iterative", args: []value.Value{value.I32(1)}, exp: []value.Value{value.I32(1)}},
+		// {path: "../examples/fibonacci.wasm", export: "fib_iterative", args: []value.Value{value.I32(0)}, exp: []value.Value{value.I32(1)}},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)

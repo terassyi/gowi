@@ -55,9 +55,13 @@ func (m *mod) build() (*structure.Module, error) {
 		}
 		for i, typ := range m.function.types {
 			f := &structure.Function{Type: typ}
-			f.Locals = make([]types.ValueType, 0, len(m.code.bodies[i].locals))
+			f.Locals = make([]types.ValueType, 0)
 			for _, l := range m.code.bodies[i].locals {
-				f.Locals = append(f.Locals, l.typ)
+				ll := make([]types.ValueType, 0, int(l.count))
+				for i := 0; i < int(l.count); i++ {
+					ll = append(ll, l.typ)
+				}
+				f.Locals = append(f.Locals, ll...)
 			}
 			f.Body = m.code.bodies[i].code
 			// sm.Functions[typ] = f
