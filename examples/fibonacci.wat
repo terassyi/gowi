@@ -33,9 +33,9 @@
     (local.set $i (i32.const 2))
 
 
-    ;; return 0 for N <= 0
+    ;; return 0 for N <= 1
     (if
-      (i32.le_s (local.get $N) (i32.const 0))
+      (i32.le_s (local.get $N) (i32.const 1))
       (then (return (i32.const 0)))
     )
 
@@ -82,6 +82,26 @@
     (i32.const 20)
     (call $fib_recursive)
   )
+  (func $fib_iter_exp1 (result i32)
+    (i32.const 0)
+    (call $fib_iterative)
+  )
+  (func $fib_iter_exp2 (result i32)
+    (i32.const 1)
+    (call $fib_iterative)
+  )
+  (func $fib_iter_exp3 (result i32)
+    (i32.const 2)
+    (call $fib_iterative)
+  )
+  (func $fib_iter_exp4 (result i32)
+    (i32.const 3)
+    (call $fib_iterative)
+  )
+  (func $fib_iter_exp5 (result i32)
+    (i32.const 20)
+    (call $fib_iterative)
+  )
 
   (export "fib" (func $fib_iterative))
   (export "fib_iterative" (func $fib_iterative))
@@ -91,4 +111,9 @@
   (export "fib_rec_exp3" (func $fib_rec_exp3))
   (export "fib_rec_exp4" (func $fib_rec_exp4))
   (export "fib_rec_exp5" (func $fib_rec_exp5))
+  (export "fib_iter_exp1" (func $fib_iter_exp1))
+  (export "fib_iter_exp2" (func $fib_iter_exp2))
+  (export "fib_iter_exp3" (func $fib_iter_exp3))
+  (export "fib_iter_exp4" (func $fib_iter_exp4))
+  (export "fib_iter_exp5" (func $fib_iter_exp5))
 )

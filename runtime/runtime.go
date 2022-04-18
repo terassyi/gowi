@@ -132,6 +132,8 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	if err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
+	ll := make([]value.Value, len(f.Code.Locals))
+	locals = append(locals, ll...)
 	if err := i.stack.Frame.Push(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
