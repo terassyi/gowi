@@ -38,6 +38,17 @@ func New() *Stack {
 	}
 }
 
+func WithSize(v, f int) *Stack {
+	if v == 0 && f == 0 {
+		return New()
+	}
+	return &Stack{
+		Value: &ValueStack{values: make([]value.Value, 0, v)},
+		Frame: &FrameStack{frames: make([]Frame, 0, f)},
+		Label: &LabelStack{labels: make([]Label, 0, f)},
+	}
+}
+
 func WithValue(values []value.Value, frames []Frame, labels []Label) (*Stack, error) {
 	stack := New()
 	for _, v := range values {

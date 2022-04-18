@@ -718,6 +718,81 @@ func TestInvoke_MemoryRelated(t *testing.T) {
 		assert.Equal(t, d.exp, res)
 	}
 }
+
+func TestInvoke_Recursive(t *testing.T) {
+	for _, d := range []struct {
+		path   string
+		export string
+		args   []value.Value
+		exp    []value.Value
+	}{
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(0)}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(1)}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(2)}, exp: []value.Value{value.I32(2)}},
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(3)}, exp: []value.Value{value.I32(6)}},
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(4)}, exp: []value.Value{value.I32(24)}},
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(5)}, exp: []value.Value{value.I32(120)}},
+		{path: "../examples/factorial.wasm", export: "factorial", args: []value.Value{value.I32(10)}, exp: []value.Value{value.I32(3628800)}},
+	} {
+		dec, err := decoder.New(d.path)
+		require.NoError(t, err)
+		mod, err := dec.Decode()
+		v, err := validator.New(mod)
+		require.NoError(t, err)
+		_, err = v.Validate()
+		require.NoError(t, err)
+		ins, err := instance.New(mod)
+		require.NoError(t, err)
+		interpreter := &interpreter{
+			instance: ins,
+			stack:    stack.New(),
+			cur:      &current{},
+			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+		}
+		res, err := interpreter.Invoke(d.export, d.args)
+		require.NoError(t, err)
+		assert.Equal(t, d.exp, res)
+	}
+}
+func TestInvoke_Fibonacci(t *testing.T) {
+	for _, d := range []struct {
+		path   string
+		export string
+		args   []value.Value
+		exp    []value.Value
+	}{
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(1)}, exp: []value.Value{value.I32(0)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(2)}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(3)}, exp: []value.Value{value.I32(1)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(4)}, exp: []value.Value{value.I32(2)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(5)}, exp: []value.Value{value.I32(3)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(6)}, exp: []value.Value{value.I32(5)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(7)}, exp: []value.Value{value.I32(8)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(8)}, exp: []value.Value{value.I32(13)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(9)}, exp: []value.Value{value.I32(21)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(10)}, exp: []value.Value{value.I32(34)}},
+		{path: "../examples/fibonacci.wasm", export: "fib_recursive", args: []value.Value{value.I32(20)}, exp: []value.Value{value.I32(4181)}},
+	} {
+		dec, err := decoder.New(d.path)
+		require.NoError(t, err)
+		mod, err := dec.Decode()
+		v, err := validator.New(mod)
+		require.NoError(t, err)
+		_, err = v.Validate()
+		require.NoError(t, err)
+		ins, err := instance.New(mod)
+		require.NoError(t, err)
+		interpreter := &interpreter{
+			instance: ins,
+			stack:    stack.WithSize(1024, 1024),
+			cur:      &current{},
+			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+		}
+		res, err := interpreter.Invoke(d.export, d.args)
+		require.NoError(t, err)
+		assert.Equal(t, d.exp, res)
+	}
+}
 func TestStep(t *testing.T) {
 	for _, d := range []struct {
 		interpreter *interpreter
