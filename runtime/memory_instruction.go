@@ -17,16 +17,16 @@ var (
 )
 
 func (i *interpreter) execLoad(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Println(instr)
 	imm := instruction.Imm[instruction.MemoryImm](instr)
 	if len(i.cur.frame.Module.MemAddrs) == 0 || i.cur.frame.Module.MemAddrs == nil {
 		return instructionResultTrap, fmt.Errorf("load: memory instance is not exist")
 	}
 	mem := i.cur.frame.Module.MemAddrs[0]
-	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("load: %w", err)
 	}
-	v, err := i.stack.Value.Pop()
+	v, err := i.stack.PopValue()
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("load: %w", err)
 	}
@@ -37,7 +37,7 @@ func (i *interpreter) execLoad(instr instruction.Instruction) (instructionResult
 			return instructionResultTrap, fmt.Errorf("i32.load: memory doesn't have enough length")
 		}
 		val := binary.LittleEndian.Uint32(load(mem, ea, 4))
-		if err := i.stack.Value.Push(value.I32(val)); err != nil {
+		if err := i.stack.PushValue(value.I32(val)); err != nil {
 			return instructionResultTrap, fmt.Errorf("i32.load: %w", err)
 		}
 	case instruction.I64_LOAD:
@@ -45,7 +45,7 @@ func (i *interpreter) execLoad(instr instruction.Instruction) (instructionResult
 			return instructionResultTrap, fmt.Errorf("i64.load: memory doesn't have enough length")
 		}
 		val := binary.LittleEndian.Uint64(load(mem, ea, 8))
-		if err := i.stack.Value.Push(value.I64(val)); err != nil {
+		if err := i.stack.PushValue(value.I64(val)); err != nil {
 			return instructionResultTrap, fmt.Errorf("i64.load: %w", err)
 		}
 	case instruction.I32_LOAD8_S:
@@ -139,7 +139,6 @@ func load(mem *instance.Memory, offset, length uint32) []byte {
 }
 
 func (i *interpreter) execStore(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Println(instr)
 	imm := instruction.Imm[instruction.MemoryImm](instr)
 	if len(i.cur.frame.Module.MemAddrs) == 0 || i.cur.frame.Module.MemAddrs == nil {
 		return instructionResultTrap, fmt.Errorf("store: memory instance is not exist")

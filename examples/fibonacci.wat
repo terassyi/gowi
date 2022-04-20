@@ -28,7 +28,7 @@
     (local $n2 i32)
     (local $tmp i32)
     (local $i i32)
-    (local.set $n1 (i32.const 1))
+    (local.set $n1 (i32.const 0))
     (local.set $n2 (i32.const 1))
     (local.set $i (i32.const 2))
 

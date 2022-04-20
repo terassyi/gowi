@@ -45,7 +45,7 @@ func (c *current) update(s *stack.Stack) error {
 }
 
 func (c *current) updateLabel(s *stack.Stack) error {
-	label, err := s.Label.Top()
+	label, err := s.TopLabel()
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (c *current) updateLabel(s *stack.Stack) error {
 }
 
 func (c *current) updateFrame(s *stack.Stack) error {
-	frame, err := s.Frame.Top()
+	frame, err := s.TopFrame()
 	if err != nil {
 		return err
 	}
@@ -97,10 +97,10 @@ func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, 
 	if err := validateLocals(f, locals); err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
-	if err := i.stack.Frame.Push(stack.Frame{Module: nil, Locals: nil}); err != nil {
+	if err := i.stack.PushFrame(stack.Frame{Module: nil, Locals: nil}); err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
-	if err := i.stack.Label.Push(stack.Label{Instructions: nil, N: 0}); err != nil {
+	if err := i.stack.PushLabel(stack.Label{Instructions: nil, N: 0}); err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	for _, v := range locals {
@@ -124,7 +124,8 @@ func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, 
 // https://webassembly.github.io/spec/core/exec/instructions.html#invocation-of-function-address-a
 func (i *interpreter) invokeFunction(f *instance.Function) error {
 	// valudate local arguments and values on the stack
-	if err := i.stack.Value.Validate(f.Type.Params); err != nil {
+	// if err := i.stack.Value.Validate(f.Type.Params); err != nil {
+	if err := i.stack.ValidateValue(f.Type.Params); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// get function arguments from the value stack
@@ -134,10 +135,10 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	}
 	ll := make([]value.Value, len(f.Code.Locals))
 	locals = append(locals, ll...)
-	if err := i.stack.Frame.Push(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
+	if err := i.stack.PushFrame(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	if err := i.stack.Label.Push(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Flag: true}); err != nil {
+	if err := i.stack.PushLabel(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Flag: true}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// sync current frame and label with top of the stack
@@ -153,11 +154,12 @@ func (i *interpreter) execute() error {
 		// frame := i.cur.frame
 		label := i.cur.label
 		contexSwitch := false
-		if i.stack.Label.Len() <= 1 {
+		if i.stack.LenLabel() <= 1 {
 			return nil
 		}
 		for sp := label.Sp; sp < len(label.Instructions); sp++ {
 			instr := label.Instructions[sp]
+			i.debubber.PrintInstr(instr)
 			res, err := i.step(instr)
 			if err != nil {
 				return fmt.Errorf("execute: %w", err)
@@ -197,7 +199,8 @@ func (i *interpreter) execute() error {
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#returning-from-a-function
 func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) {
-	if err := i.stack.Value.Validate(f.Type.Returns); err != nil {
+	// if err := i.stack.Value.Validate(f.Type.Returns); err != nil {
+	if err := i.stack.ValidateValue(f.Type.Returns); err != nil {
 		return nil, fmt.Errorf("finish: %w", err)
 	}
 	values, err := i.stack.PopValuesRev(len(f.Type.Returns))
@@ -209,10 +212,10 @@ func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) 
 }
 
 func (i *interpreter) isInvocationFinished() bool {
-	if i.stack.Label.Len() > 1 || i.stack.Label.IsEmpty() {
+	if i.stack.LenLabel() > 1 || i.stack.Label.IsEmpty() {
 		return false
 	}
-	if i.stack.Frame.Len() == 1 {
+	if i.stack.LenFrame() == 1 {
 		// frame stack: dummy
 		fmt.Println("function invocation is finished.")
 		return true
@@ -298,12 +301,12 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 }
 
 func (i *interpreter) restoreStack() error {
-	label, err := i.stack.Label.Pop()
+	label, err := i.stack.PopLabel()
 	if err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
 	if label.Flag {
-		if _, err := i.stack.Frame.Pop(); err != nil {
+		if _, err := i.stack.PopFrame(); err != nil {
 			return fmt.Errorf("restore: %w", err)
 		}
 	}

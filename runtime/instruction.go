@@ -128,7 +128,6 @@ func (*blockIf) typ() blockType {
 }
 
 func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Printf("%s: %x\n", instr, instruction.Imm[types.BlockType](instr))
 	funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("block: %w", err)
@@ -138,7 +137,7 @@ func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResul
 		return instructionResultTrap, fmt.Errorf("block: %w", err)
 	}
 	i.cur.label.Sp += l
-	if err := i.stack.Label.Push(*label); err != nil {
+	if err := i.stack.PushLabel(*label); err != nil {
 		return instructionResultTrap, fmt.Errorf("block: %w", err)
 	}
 	return instructionResultEnterBlock, nil
@@ -146,7 +145,6 @@ func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResul
 
 func (i *interpreter) execLoop(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-loop-xref-syntax-instructions-syntax-blocktype-mathit-blocktype-xref-syntax-instructions-syntax-instr-mathit-instr-ast-xref-syntax-instructions-syntax-instr-control-mathsf-end
-	fmt.Printf("%s: %x\n", instr, instruction.Imm[types.BlockType](instr))
 	funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
@@ -156,7 +154,7 @@ func (i *interpreter) execLoop(instr instruction.Instruction) (instructionResult
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
 	}
 	i.cur.label.Sp += l
-	if err := i.stack.Label.Push(*label); err != nil {
+	if err := i.stack.PushLabel(*label); err != nil {
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
 	}
 	return instructionResultEnterBlock, nil
@@ -164,13 +162,13 @@ func (i *interpreter) execLoop(instr instruction.Instruction) (instructionResult
 
 func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-if-xref-syntax-instructions-syntax-blocktype-mathit-blocktype-xref-syntax-instructions-syntax-instr-mathit-instr-1-ast-xref-syntax-instructions-syntax-instr-control-mathsf-else-xref-syntax-instructions-syntax-instr-mathit-instr-2-ast-xref-syntax-instructions-syntax-instr-control-mathsf-end
-	fmt.Printf("%s: %x\n", instr, instruction.Imm[types.BlockType](instr))
 	funcType, err := i.expand(instruction.Imm[types.BlockType](instr))
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
 	label, l, err := i.labelBlock(funcType)
-	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
 	fmt.Printf("[debug] stack frame pointer pop len: %d\n", l)
@@ -182,7 +180,7 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 	if val.(value.Number).NumType() != value.NumTypeI32 {
 		return instructionResultTrap, fmt.Errorf("if: i32 is expected, got %s", val.(value.Number))
 	}
-	if i.stack.Value.Len() < len(funcType.Params) {
+	if i.stack.Len() < len(funcType.Params) {
 		return instructionResultTrap, fmt.Errorf("if: %d values is requied on the value stack", len(funcType.Params))
 	}
 	// branch
@@ -191,7 +189,7 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
 	// push to label stack
-	if err := i.stack.Label.Push(*condLabel); err != nil {
+	if err := i.stack.PushLabel(*condLabel); err != nil {
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
 	}
 	return instructionResultEnterBlock, nil
@@ -200,11 +198,10 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-br-l
 	labelIndex := instruction.Imm[uint32](instr)
-	fmt.Printf("%s label=%d\n", instr, labelIndex)
-	if i.stack.Label.Len() <= int(labelIndex) {
+	if i.stack.LenLabel() <= int(labelIndex) {
 		return instructionResultTrap, fmt.Errorf("br: the label stack must contain at least %d labels", labelIndex+1)
 	}
-	l, err := i.stack.Label.Ref(int(labelIndex))
+	l, err := i.stack.RefLabel(int(labelIndex))
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("br: %w", err)
 	}
@@ -212,18 +209,40 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("br: %w", err)
 	}
-	for j := 0; j < int(labelIndex)+1; j++ {
-		label, err := i.stack.Label.Top()
+	popedLabel := 0
+	for {
+		v, err := i.stack.Top()
 		if err != nil {
 			return instructionResultTrap, fmt.Errorf("br: %w", err)
 		}
-		if _, err := i.stack.PopValues(int(label.ValCounter)); err != nil {
-			return instructionResultTrap, fmt.Errorf("br: %w", err)
+		switch v.ValType() {
+		case value.ValTypeLabel:
+			if _, err := i.stack.PopLabel(); err != nil {
+				return instructionResultTrap, fmt.Errorf("br: %w", err)
+			}
+			popedLabel++
+		case value.ValTypeNum, value.ValTypeVec:
+			if _, err := i.stack.PopValue(); err != nil {
+				return instructionResultTrap, fmt.Errorf("br: %w", err)
+			}
 		}
-		if _, err := i.stack.Label.Pop(); err != nil {
-			return instructionResultTrap, fmt.Errorf("br: %w", err)
+		if popedLabel == int(labelIndex)+1 {
+			break
 		}
+	
 	}
+	// for j := 0; j < int(labelIndex)+1; j++ {
+	// 	label, err := i.stack.TopLabel()
+	// 	if err != nil {
+	// 		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	// 	}
+	// 	if _, err := i.stack.PopValues(int(label.ValCounter)); err != nil {
+	// 		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	// 	}
+	// 	if _, err := i.stack.PopLabel(); err != nil {
+	// 		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	// 	}
+	// }
 	for _, v := range values {
 		if err := i.stack.PushValue(v); err != nil {
 			return instructionResultTrap, fmt.Errorf("br: %w", err)
@@ -237,8 +256,8 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 
 func (i *interpreter) execBrIf(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-br-l
-	fmt.Printf("%s label=%x\n", instr, instruction.Imm[uint32](instr))
-	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("br_if: %w", err)
 	}
 	cond, err := i.stack.PopValue()
@@ -255,18 +274,17 @@ func (i *interpreter) execBrIf(instr instruction.Instruction) (instructionResult
 
 func (i *interpreter) execReturn(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-return
-	fmt.Println(instr)
-	if i.stack.Value.Len() < int(i.cur.label.N) {
+	if i.stack.Len() < int(i.cur.label.N) {
 		return instructionResultTrap, fmt.Errorf("return: the value stack must have at least %d values", i.cur.label.N)
 	}
-	if i.stack.Frame.IsEmpty() {
+	if i.stack.IsFrameEmpty() {
 		return instructionResultTrap, fmt.Errorf("return: the frame stack must have at least one vlaue")
 	}
-	if _, err := i.stack.Frame.Pop(); err != nil {
+	if _, err := i.stack.PopFrame(); err != nil {
 		return instructionResultTrap, fmt.Errorf("return: %w", err)
 	}
 	for {
-		label, err := i.stack.Label.Pop()
+		label, err := i.stack.PopLabel()
 		if err != nil {
 			return instructionResultTrap, fmt.Errorf("return: %w", err)
 		}
@@ -357,7 +375,6 @@ func ifElseLabel(label *stack.Label, cond value.I32) (*stack.Label, error) {
 }
 
 func (i *interpreter) execLabelEnd(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Println(instr.String())
 	if err := i.restoreStack(); err != nil {
 		return instructionResultTrap, fmt.Errorf("label end: %w", err)
 	}
@@ -376,7 +393,6 @@ func (i *interpreter) execDrop(instr instruction.Instruction) (instructionResult
 
 func (i *interpreter) execNop(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-nop
-	fmt.Println(instr.String())
 	return instructionResultRunNext, nil
 }
 
@@ -385,8 +401,8 @@ func (i *interpreter) execUnreachable(instr instruction.Instruction) (instructio
 }
 
 func (i *interpreter) execSelect(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Println(instr)
-	if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
+	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("select :%w", err)
 	}
 	c, err := i.stack.PopValue()
@@ -416,7 +432,6 @@ func (i *interpreter) execSelect(instr instruction.Instruction) (instructionResu
 func (i *interpreter) execCall(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-call-x
 	index := instruction.Imm[uint32](instr)
-	fmt.Printf("function call index = %d\n", index)
 	i.f = i.cur.frame.Module.FuncAddrs[index]
 	// return i.invokeFunction(f)
 	return instructionResultCallFunc, nil
@@ -426,28 +441,24 @@ func (i *interpreter) execConst(instr instruction.Instruction) (instructionResul
 	switch instr.Opcode() {
 	case instruction.I32_CONST:
 		imm := instruction.Imm[int32](instr)
-		fmt.Printf("%s(%v)\n", instr, imm)
 		if err := i.stack.PushValue(value.I32(imm)); err != nil {
 			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
 		return instructionResultRunNext, nil
 	case instruction.I64_CONST:
 		imm := instruction.Imm[int64](instr)
-		fmt.Printf("%s(%v)\n", instr, imm)
 		if err := i.stack.PushValue(value.I64(imm)); err != nil {
 			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
 		return instructionResultRunNext, nil
 	case instruction.F32_CONST:
 		imm := instruction.Imm[uint32](instr)
-		fmt.Printf("%s(%v)\n", instr, imm)
 		if err := i.stack.PushValue(value.F32(imm)); err != nil {
 			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
 		return instructionResultRunNext, nil
 	case instruction.F64_CONST:
 		imm := instruction.Imm[uint64](instr)
-		fmt.Printf("%s(%v)\n", instr, imm)
 		if err := i.stack.PushValue(value.F64(imm)); err != nil {
 			return instructionResultTrap, fmt.Errorf("const: %w", err)
 		}
@@ -458,7 +469,6 @@ func (i *interpreter) execConst(instr instruction.Instruction) (instructionResul
 }
 
 func (i *interpreter) execLocal(instr instruction.Instruction, frame *stack.Frame) (instructionResult, error) {
-	fmt.Printf("%s(%v)\n", instr, instruction.Imm[uint32](instr))
 	switch instr.Opcode() {
 	case instruction.GET_LOCAL:
 		if err := i.getLocal(instruction.Imm[uint32](instr), frame); err != nil {
@@ -563,7 +573,7 @@ func (i *interpreter) execUnop(instr instruction.Instruction) (instructionResult
 type unopFunc func(value.Number) (value.Number, error)
 
 func (i *interpreter) unop(valType value.NumberType, f unopFunc) error {
-	v, err := i.stack.Value.Top()
+	v, err := i.stack.TopValue()
 	if err != nil {
 		return fmt.Errorf("unop: %w", err)
 	}
@@ -588,7 +598,6 @@ func (i *interpreter) unop(valType value.NumberType, f unopFunc) error {
 }
 
 func (i *interpreter) execBinop(instr instruction.Instruction) (instructionResult, error) {
-	fmt.Println(instr.String())
 	switch instr.Opcode() {
 	case instruction.I32_ADD:
 		if err := i.binop(value.NumTypeI32, add); err != nil {
@@ -802,7 +811,7 @@ type binopFunc func(value.Number, value.Number) (value.Number, error)
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#t-mathsf-xref-syntax-instructions-syntax-binop-mathit-binop
 func (i *interpreter) binop(valType value.NumberType, f binopFunc) error {
-	vallds, err := i.stack.Value.RefNRev(2)
+	vallds, err := i.stack.RefNValueRev(2)
 	if err != nil {
 		return fmt.Errorf("binop: %w", err)
 	}

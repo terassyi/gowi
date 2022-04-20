@@ -55,9 +55,11 @@ const (
 type ValueType uint8
 
 const (
-	ValTypeNum ValueType = 0
-	ValTypeVec ValueType = 1
-	ValTypeRef ValueType = 2
+	ValTypeNum   ValueType = 0
+	ValTypeVec   ValueType = 1
+	ValTypeRef   ValueType = 2
+	ValTypeFrame ValueType = 3
+	ValTypeLabel ValueType = 4
 )
 
 type I32 uint32
@@ -335,3 +337,21 @@ func trimBase(s string, base int) string {
 		return s
 	}
 }
+
+// dummy for stack value
+type FrameVal struct{}
+
+func (FrameVal) ValType() ValueType {
+	return ValTypeFrame
+}
+
+type LabelVal struct{}
+
+func (LabelVal) ValType() ValueType {
+	return ValTypeLabel
+}
+
+var (
+	DummyFrame FrameVal = FrameVal{}
+	DummyLabel LabelVal = LabelVal{}
+)

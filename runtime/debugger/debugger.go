@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/terassyi/gowi/instruction"
 	"github.com/terassyi/gowi/runtime/value"
 )
 
@@ -43,4 +44,8 @@ func (d *Debugger) ShowResult(results []value.Value) {
 		}
 	}
 	fmt.Fprintf(d.writer, ")\n")
+}
+
+func (d *Debugger) PrintInstr(instr instruction.Instruction) {
+	fmt.Fprintf(d.writer, "%s\n", instr)
 }
