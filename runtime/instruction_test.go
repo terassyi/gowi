@@ -104,9 +104,10 @@ func TestBlockStackPop(t *testing.T) {
 func TestInterpreterLabelBlock(t *testing.T) {
 	for _, d := range []struct {
 		interpreter *interpreter
-		op          instruction.Opcode
-		ft          *types.FuncType
-		exp         *stack.Label
+		// op          instruction.Opcode
+		instr instruction.Instruction
+		ft    *types.FuncType
+		exp   *stack.Label
 	}{
 		{
 			interpreter: &interpreter{cur: &current{
@@ -121,15 +122,16 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Nop{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -146,16 +148,17 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.I32}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.I32}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Nop{},
 					&instruction.I32Const{Imm: 0},
 					&instruction.End{},
 				},
-				N:  1,
-				Sp: 0,
+				N:    1,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -175,15 +178,16 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 3,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.I32}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.I32}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.I32Const{Imm: 0},
 					&instruction.End{},
 				},
-				N:  1,
-				Sp: 0,
+				N:    1,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -202,8 +206,8 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.I32}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{types.I32}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Block{Imm: types.BlockType(types.I32)},
@@ -211,8 +215,9 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					&instruction.End{},
 					&instruction.End{},
 				},
-				N:  1,
-				Sp: 0,
+				N:    1,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -228,15 +233,16 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Nop{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -253,16 +259,17 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Nop{},
 					&instruction.Else{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -281,8 +288,8 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Nop{},
@@ -291,8 +298,9 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					&instruction.Else{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 		{
@@ -315,8 +323,8 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					Sp: 0,
 				},
 			}},
-			op: instruction.BLOCK,
-			ft: &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
+			instr: &instruction.Block{},
+			ft:    &types.FuncType{Params: types.ResultType{}, Returns: types.ResultType{}},
 			exp: &stack.Label{
 				Instructions: []instruction.Instruction{
 					&instruction.Nop{},
@@ -328,12 +336,13 @@ func TestInterpreterLabelBlock(t *testing.T) {
 					&instruction.End{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeBlock,
 			},
 		},
 	} {
-		label, _, err := d.interpreter.labelBlock(d.ft)
+		label, _, err := d.interpreter.labelBlock(d.instr, d.ft)
 		require.NoError(t, err)
 		assert.Equal(t, d.exp, label)
 	}
@@ -358,8 +367,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 				Instructions: []instruction.Instruction{
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -373,8 +383,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 				Instructions: []instruction.Instruction{
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -391,8 +402,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 				Instructions: []instruction.Instruction{
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -410,8 +422,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 					&instruction.Nop{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -431,8 +444,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 					&instruction.I32Const{Imm: 7},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -452,8 +466,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 					&instruction.I32Const{Imm: 8},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -488,8 +503,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 					&instruction.End{},
 					&instruction.End{},
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 		{
@@ -528,8 +544,9 @@ func TestIfElseLabelBlock(t *testing.T) {
 					&instruction.End{}, // end of if2
 					&instruction.End{}, // end of if0
 				},
-				N:  0,
-				Sp: 0,
+				N:    0,
+				Sp:   0,
+				Type: stack.LabelTypeIf,
 			},
 		},
 	} {

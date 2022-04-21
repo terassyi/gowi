@@ -17,10 +17,11 @@ const (
 )
 
 var (
-	StackLimit             error = errors.New("Stack limit")
-	StackIsEmpty           error = errors.New("Stack is empty")
-	InvalidStackLength     error = errors.New("Invalid stack length")
-	ValueStackTypeNotMatch error = errors.New("Value type in the stack is not matched")
+	StackLimit              error = errors.New("Stack limit")
+	StackIsEmpty            error = errors.New("Stack is empty")
+	InvalidStackLength      error = errors.New("Invalid stack length")
+	ValueStackTypeNotMatch  error = errors.New("Value type in the stack is not matched")
+	InvalidLabelInstruction error = errors.New("Invalid label instruction")
 )
 
 // https://webassembly.github.io/spec/core/exec/runtime.html#stack
@@ -455,7 +456,40 @@ type Label struct {
 	Instructions []instruction.Instruction
 	N            uint8
 	Sp           int
-	Flag         bool
+	Type         LabelType
+}
+
+func (l *Label) IsFunction() bool {
+	return l.Type == LabelTypeFunction
+}
+
+func (l *Label) IsLoop() bool {
+	return l.Type == LabelTypeLoop
+}
+
+type LabelType uint8
+
+const (
+	LabelTypeFunction LabelType = iota
+	LabelTypeBlock    LabelType = iota
+	LabelTypeIf       LabelType = iota
+	LabelTypeLoop     LabelType = iota
+	LabelTypeUnknown  LabelType = iota
+)
+
+func NewLabelType(instr instruction.Instruction) (LabelType, error) {
+	switch instr.Opcode() {
+	case instruction.CALL:
+		return LabelTypeFunction, nil
+	case instruction.BLOCK:
+		return LabelTypeBlock, nil
+	case instruction.IF:
+		return LabelTypeIf, nil
+	case instruction.LOOP:
+		return LabelTypeLoop, nil
+	default:
+		return LabelTypeUnknown, InvalidLabelInstruction
+	}
 }
 
 type Frame struct {

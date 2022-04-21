@@ -133,12 +133,11 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	if err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	ll := make([]value.Value, len(f.Code.Locals))
-	locals = append(locals, ll...)
+	locals = append(locals, initLocalValues(f.Code.Locals)...)
 	if err := i.stack.PushFrame(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	if err := i.stack.PushLabel(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Flag: true}); err != nil {
+	if err := i.stack.PushLabel(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Type: stack.LabelTypeFunction}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// sync current frame and label with top of the stack
@@ -147,6 +146,23 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	}
 	// execute function instruction
 	return nil
+}
+
+func initLocalValues(locals []types.ValueType) []value.Value {
+	values := make([]value.Value, 0, len(locals))
+	for _, l := range locals {
+		switch l {
+		case types.I32:
+			values = append(values, value.I32(0))
+		case types.I64:
+			values = append(values, value.I64(0))
+		case types.F32:
+			values = append(values, value.F32(0))
+		case types.F64:
+			values = append(values, value.F64(0))
+		}
+	}
+	return values
 }
 
 func (i *interpreter) execute() error {
@@ -305,7 +321,7 @@ func (i *interpreter) restoreStack() error {
 	if err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	if label.Flag {
+	if label.IsFunction() {
 		if _, err := i.stack.PopFrame(); err != nil {
 			return fmt.Errorf("restore: %w", err)
 		}

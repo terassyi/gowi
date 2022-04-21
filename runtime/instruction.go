@@ -132,7 +132,7 @@ func (i *interpreter) execBlock(instr instruction.Instruction) (instructionResul
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("block: %w", err)
 	}
-	label, l, err := i.labelBlock(funcType)
+	label, l, err := i.labelBlock(instr, funcType)
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("block: %w", err)
 	}
@@ -149,7 +149,7 @@ func (i *interpreter) execLoop(instr instruction.Instruction) (instructionResult
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
 	}
-	label, l, err := i.labelBlock(funcType)
+	label, l, err := i.labelBlock(instr, funcType)
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("loop: %w", err)
 	}
@@ -166,7 +166,7 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
-	label, l, err := i.labelBlock(funcType)
+	label, l, err := i.labelBlock(instr, funcType)
 	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
 	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
@@ -201,22 +201,29 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 	if i.stack.LenLabel() <= int(labelIndex) {
 		return instructionResultTrap, fmt.Errorf("br: the label stack must contain at least %d labels", labelIndex+1)
 	}
-	l, err := i.stack.RefLabel(int(labelIndex))
+	target, err := i.stack.RefLabel(int(labelIndex))
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("br: %w", err)
 	}
-	values, err := i.stack.PopValuesRev(int(l.N))
+	values, err := i.stack.PopValuesRev(int(target.N))
 	if err != nil {
 		return instructionResultTrap, fmt.Errorf("br: %w", err)
 	}
 	popedLabel := 0
 	for {
+		if popedLabel == int(labelIndex)+1 {
+			break
+		}
 		v, err := i.stack.Top()
 		if err != nil {
 			return instructionResultTrap, fmt.Errorf("br: %w", err)
 		}
 		switch v.ValType() {
 		case value.ValTypeLabel:
+			if target.IsLoop() && popedLabel == int(labelIndex) {
+				popedLabel++
+				continue
+			}
 			if _, err := i.stack.PopLabel(); err != nil {
 				return instructionResultTrap, fmt.Errorf("br: %w", err)
 			}
@@ -226,23 +233,7 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 				return instructionResultTrap, fmt.Errorf("br: %w", err)
 			}
 		}
-		if popedLabel == int(labelIndex)+1 {
-			break
-		}
-	
 	}
-	// for j := 0; j < int(labelIndex)+1; j++ {
-	// 	label, err := i.stack.TopLabel()
-	// 	if err != nil {
-	// 		return instructionResultTrap, fmt.Errorf("br: %w", err)
-	// 	}
-	// 	if _, err := i.stack.PopValues(int(label.ValCounter)); err != nil {
-	// 		return instructionResultTrap, fmt.Errorf("br: %w", err)
-	// 	}
-	// 	if _, err := i.stack.PopLabel(); err != nil {
-	// 		return instructionResultTrap, fmt.Errorf("br: %w", err)
-	// 	}
-	// }
 	for _, v := range values {
 		if err := i.stack.PushValue(v); err != nil {
 			return instructionResultTrap, fmt.Errorf("br: %w", err)
@@ -250,6 +241,11 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 	}
 	if err := i.cur.update(i.stack); err != nil {
 		return instructionResultTrap, fmt.Errorf("br: %w", err)
+	}
+	if target.IsLoop() && labelIndex == 0 {
+		i.cur.label.Sp = -1
+	} else if target.IsLoop() {
+		i.cur.label.Sp = 0
 	}
 	return instructionResultLabelEnd, nil
 }
@@ -288,7 +284,7 @@ func (i *interpreter) execReturn(instr instruction.Instruction) (instructionResu
 		if err != nil {
 			return instructionResultTrap, fmt.Errorf("return: %w", err)
 		}
-		if label.Flag {
+		if label.IsFunction() {
 			break
 		}
 	}
@@ -298,7 +294,7 @@ func (i *interpreter) execReturn(instr instruction.Instruction) (instructionResu
 	return instructionResultReturn, nil
 }
 
-func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, error) {
+func (i *interpreter) labelBlock(instr instruction.Instruction, funcType *types.FuncType) (*stack.Label, int, error) {
 	instrs := make([]instruction.Instruction, 0)
 	bs := newBlockStack()
 	bs.push(i.cur.label.Instructions[i.cur.label.Sp].Opcode())
@@ -319,7 +315,18 @@ func (i *interpreter) labelBlock(funcType *types.FuncType) (*stack.Label, int, e
 			}
 		}
 	}
-	return &stack.Label{Instructions: instrs, N: uint8(len(funcType.Returns)), Sp: 0, Flag: false}, len(instrs), nil
+	labelType, err := stack.NewLabelType(instr)
+	if err != nil {
+		return nil, 0, fmt.Errorf("label block: %w", err)
+	}
+	var arity uint8
+	switch labelType {
+	case stack.LabelTypeLoop:
+		arity = uint8(len(funcType.Params))
+	default:
+		arity = uint8(len(funcType.Returns))
+	}
+	return &stack.Label{Instructions: instrs, N: arity, Sp: 0, Type: labelType}, len(instrs), nil
 }
 
 func ifElseLabel(label *stack.Label, cond value.I32) (*stack.Label, error) {
@@ -365,7 +372,7 @@ func ifElseLabel(label *stack.Label, cond value.I32) (*stack.Label, error) {
 		ifBlock = append(ifBlock, label.Instructions...)
 		elseBlock = append(elseBlock, &instruction.End{})
 	}
-	condLabel := &stack.Label{N: label.N, Sp: label.Sp, Flag: false}
+	condLabel := &stack.Label{N: label.N, Sp: label.Sp, Type: stack.LabelTypeIf}
 	if cond != value.I32(0) {
 		condLabel.Instructions = ifBlock
 	} else {
