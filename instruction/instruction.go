@@ -18,6 +18,7 @@ type Instruction interface {
 	Opcode() Opcode
 	String() string
 	imm() any
+	ImmString() string
 }
 
 type None struct{}

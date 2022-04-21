@@ -75,7 +75,6 @@ var execCommand = &cobra.Command{
 			if err != nil {
 				log.Fatalln(err)
 			}
-			fmt.Println(locals)
 			debugLevel, err := cmd.Flags().GetInt("debug")
 			if err != nil {
 				log.Fatalln(err)
@@ -88,7 +87,7 @@ var execCommand = &cobra.Command{
 			if err != nil {
 				log.Fatalln(err)
 			}
-			fmt.Println(results)
+			fmt.Println(parseInvocationResult(invoke, locals, results))
 		}
 	},
 }
@@ -107,4 +106,21 @@ func parseArgs(params types.ResultType, args []string) ([]value.Value, error) {
 		values = append(values, v)
 	}
 	return values, nil
+}
+
+func parseInvocationResult(f string, params, results []value.Value) string {
+	return fmt.Sprintf("\n  %s%s = %s", f, stringValueSlice(params), stringValueSlice(results))
+}
+
+func stringValueSlice(values []value.Value) string {
+	if len(values) == 0 || values == nil {
+		return "()"
+	}
+	res := "("
+	for _, v := range values {
+		res += fmt.Sprintf("%v, ", v)
+	}
+	res = res[:len(res)-2]
+	res += ")"
+	return res
 }

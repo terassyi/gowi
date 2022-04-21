@@ -1,5 +1,7 @@
 package instruction
 
+import "fmt"
+
 type GetLocal struct {
 	Imm uint32
 }
@@ -14,6 +16,10 @@ func (gl *GetLocal) imm() any {
 
 func (*GetLocal) String() string {
 	return "get_local"
+}
+
+func (g *GetLocal) ImmString() string {
+	return fmt.Sprintf("$%d", g.Imm)
 }
 
 type SetLocal struct {
@@ -32,6 +38,10 @@ func (*SetLocal) String() string {
 	return "set_local"
 }
 
+func (s *SetLocal) ImmString() string {
+	return fmt.Sprintf("$%d", s.Imm)
+}
+
 type TeeLocal struct {
 	Imm uint32
 }
@@ -46,6 +56,10 @@ func (tl *TeeLocal) imm() any {
 
 func (*TeeLocal) String() string {
 	return "tee_local"
+}
+
+func (t *TeeLocal) ImmString() string {
+	return fmt.Sprintf("$%d", t.Imm)
 }
 
 type GetGlobal struct {
@@ -64,6 +78,10 @@ func (*GetGlobal) String() string {
 	return "get_global"
 }
 
+func (g *GetGlobal) ImmString() string {
+	return fmt.Sprintf("$%d", g.Imm)
+}
+
 type SetGlobal struct {
 	Imm uint32
 }
@@ -78,4 +96,8 @@ func (sg *SetGlobal) imm() any {
 
 func (*SetGlobal) String() string {
 	return "set_global"
+}
+
+func (s *SetGlobal) ImmString() string {
+	return fmt.Sprintf("$%d", s.Imm)
 }

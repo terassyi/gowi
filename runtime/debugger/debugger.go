@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/terassyi/gowi/instruction"
+	"github.com/terassyi/gowi/runtime/stack"
 	"github.com/terassyi/gowi/runtime/value"
 )
 
@@ -35,6 +36,10 @@ func New(level DebugLevel) *Debugger {
 	}
 }
 
+func (d *Debugger) ShowInfo(name string) {
+	fmt.Fprintf(d.writer, "\n\nInvoke %s\n--------------------\n", name)
+}
+
 func (d *Debugger) ShowResult(results []value.Value) {
 	fmt.Fprintf(d.writer, "Execution Result = (")
 	for i, res := range results {
@@ -46,6 +51,13 @@ func (d *Debugger) ShowResult(results []value.Value) {
 	fmt.Fprintf(d.writer, ")\n")
 }
 
-func (d *Debugger) PrintInstr(instr instruction.Instruction) {
-	fmt.Fprintf(d.writer, "%s\n", instr)
+func (d *Debugger) PrintInstr(stck *stack.Stack, instr instruction.Instruction) {
+	nestTab := ""
+	for i := 0; i < stck.LenLabel(); i++ {
+		nestTab += "  "
+	}
+	if instr.Opcode() == instruction.END {
+		nestTab = nestTab[:len(nestTab)-2]
+	}
+	fmt.Fprintf(d.writer, "%s%s %s\n", nestTab, instr, instr.ImmString())
 }

@@ -86,6 +86,7 @@ func New(mod *structure.Module, externalvals []instance.ExternalValue, debugLeve
 }
 
 func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, error) {
+	i.debubber.ShowInfo(name)
 	ext, err := i.instance.GetExport(name)
 	if err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
@@ -175,7 +176,7 @@ func (i *interpreter) execute() error {
 		}
 		for sp := label.Sp; sp < len(label.Instructions); sp++ {
 			instr := label.Instructions[sp]
-			i.debubber.PrintInstr(instr)
+			i.debubber.PrintInstr(i.stack, instr)
 			res, err := i.step(instr)
 			if err != nil {
 				return fmt.Errorf("execute: %w", err)
@@ -209,7 +210,6 @@ func (i *interpreter) execute() error {
 				break
 			}
 		}
-		// fmt.Println("function context is changed.")
 	}
 }
 
@@ -233,7 +233,6 @@ func (i *interpreter) isInvocationFinished() bool {
 	}
 	if i.stack.LenFrame() == 1 {
 		// frame stack: dummy
-		fmt.Println("function invocation is finished.")
 		return true
 	}
 	return false

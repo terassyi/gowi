@@ -1,6 +1,10 @@
 package instruction
 
-import "github.com/terassyi/gowi/types"
+import (
+	"fmt"
+
+	"github.com/terassyi/gowi/types"
+)
 
 type I32Const struct {
 	Imm int32
@@ -16,6 +20,10 @@ func (i32c *I32Const) imm() any {
 
 func (*I32Const) String() string {
 	return "i32.const"
+}
+
+func (i *I32Const) ImmString() string {
+	return fmt.Sprintf("0x%x", i.Imm)
 }
 
 type I64Const struct {
@@ -34,6 +42,10 @@ func (*I64Const) String() string {
 	return "i64.const"
 }
 
+func (i *I64Const) ImmString() string {
+	return fmt.Sprintf("0x%x", i.Imm)
+}
+
 type F32Const struct {
 	Imm uint32
 }
@@ -50,6 +62,10 @@ func (*F32Const) String() string {
 	return "f32.const"
 }
 
+func (f *F32Const) ImmString() string {
+	return fmt.Sprintf("0x%x", f.Imm)
+}
+
 type F64Const struct {
 	Imm uint64
 }
@@ -64,6 +80,10 @@ func (f64c *F64Const) imm() any {
 
 func (*F64Const) String() string {
 	return "f64.const"
+}
+
+func (f *F64Const) ImmString() string {
+	return fmt.Sprintf("0x%x", f.Imm)
 }
 
 func IsConst(instr Instruction) bool {

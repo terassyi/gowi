@@ -1,5 +1,7 @@
 package instruction
 
+import "fmt"
+
 type Call struct {
 	Imm uint32
 }
@@ -14,6 +16,10 @@ func (c *Call) imm() any {
 
 func (*Call) String() string {
 	return "call"
+}
+
+func (c *Call) ImmString() string {
+	return fmt.Sprintf("%v", c.Imm)
 }
 
 type CallIndirect struct {
@@ -35,4 +41,8 @@ func (ci *CallIndirect) imm() any {
 
 func (*CallIndirect) String() string {
 	return "call_indirect"
+}
+
+func (c *CallIndirect) ImmString() string {
+	return fmt.Sprintf("%v", c.Imm.TypeIndex)
 }

@@ -490,7 +490,7 @@ func TestInvoke_Numeric(t *testing.T) {
 			instance: ins,
 			stack:    stack.New(),
 			cur:      &current{},
-			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+			debubber: debugger.New(debugger.DebugLevelNoLog),
 		}
 		res, err := interpreter.Invoke(d.export, d.args)
 		require.NoError(t, err)
@@ -650,7 +650,7 @@ func TestInvoke_ControlFlow(t *testing.T) {
 			instance: ins,
 			stack:    stack.New(),
 			cur:      &current{},
-			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+			debubber: debugger.New(debugger.DebugLevelNoLog),
 		}
 		res, err := interpreter.Invoke(d.export, d.args)
 		require.NoError(t, err)
@@ -741,7 +741,7 @@ func TestInvoke_MemoryRelated(t *testing.T) {
 			instance: ins,
 			stack:    stack.New(),
 			cur:      &current{},
-			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+			debubber: debugger.New(debugger.DebugLevelNoLog),
 		}
 		res, err := interpreter.Invoke(d.export, d.args)
 		require.NoError(t, err)
@@ -777,7 +777,7 @@ func TestInvoke_Recursive(t *testing.T) {
 			instance: ins,
 			stack:    stack.New(),
 			cur:      &current{},
-			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+			debubber: debugger.New(debugger.DebugLevelNoLog),
 		}
 		res, err := interpreter.Invoke(d.export, d.args)
 		require.NoError(t, err)
@@ -827,7 +827,7 @@ func TestInvoke_Fibonacci(t *testing.T) {
 			instance: ins,
 			stack:    stack.WithSize(1024, 1024),
 			cur:      &current{},
-			debubber: debugger.New(debugger.DebugLevelLogOnlyStdout),
+			debubber: debugger.New(debugger.DebugLevelNoLog),
 		}
 		res, err := interpreter.Invoke(d.export, d.args)
 		require.NoError(t, err)

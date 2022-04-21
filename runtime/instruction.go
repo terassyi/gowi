@@ -171,7 +171,6 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
-	fmt.Printf("[debug] stack frame pointer pop len: %d\n", l)
 	i.cur.label.Sp += l
 	val, err := i.stack.PopValue()
 	if err != nil {
