@@ -125,7 +125,6 @@ func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, 
 // https://webassembly.github.io/spec/core/exec/instructions.html#invocation-of-function-address-a
 func (i *interpreter) invokeFunction(f *instance.Function) error {
 	// valudate local arguments and values on the stack
-	// if err := i.stack.Value.Validate(f.Type.Params); err != nil {
 	if err := i.stack.ValidateValue(f.Type.Params); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
@@ -215,7 +214,6 @@ func (i *interpreter) execute() error {
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#returning-from-a-function
 func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) {
-	// if err := i.stack.Value.Validate(f.Type.Returns); err != nil {
 	if err := i.stack.ValidateValue(f.Type.Returns); err != nil {
 		return nil, fmt.Errorf("finish: %w", err)
 	}
@@ -228,7 +226,7 @@ func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) 
 }
 
 func (i *interpreter) isInvocationFinished() bool {
-	if i.stack.LenLabel() > 1 || i.stack.Label.IsEmpty() {
+	if i.stack.LenLabel() > 1 || i.stack.IsLabelEmpty() {
 		return false
 	}
 	if i.stack.LenFrame() == 1 {

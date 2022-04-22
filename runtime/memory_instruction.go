@@ -22,7 +22,6 @@ func (i *interpreter) execLoad(instr instruction.Instruction) (instructionResult
 		return instructionResultTrap, fmt.Errorf("load: memory instance is not exist")
 	}
 	mem := i.cur.frame.Module.MemAddrs[0]
-	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
 	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("load: %w", err)
 	}

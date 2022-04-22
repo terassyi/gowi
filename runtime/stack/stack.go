@@ -70,14 +70,6 @@ func WithValue(values []value.Value, frames []Frame, labels []Label) (*Stack, er
 	return stack, nil
 }
 
-func (s *Stack) Push(val value.Value) error {
-	return s.Value.push(val)
-}
-
-func (s *Stack) Pop() (value.Value, error) {
-	return s.Value.pop()
-}
-
 func (s *Stack) Top() (value.Value, error) {
 	return s.Value.top()
 }
@@ -243,24 +235,6 @@ func (vs *ValueStack) isEmpty() bool {
 	return len(vs.values) == 0
 }
 
-func (vs *ValueStack) Validate(ts []types.ValueType) error {
-	for i, t := range ts {
-		val := vs.values[len(vs.values)-i-1]
-		if val.ValType() == value.ValTypeNum {
-			if !val.(value.Number).ValidateValueType(t) {
-				return ValueStackTypeNotMatch
-			}
-		} else if val.ValType() == value.ValTypeVec {
-			if t != types.V128 {
-				return ValueStackTypeNotMatch
-			}
-		} else {
-			return ValueStackTypeNotMatch
-		}
-	}
-	return nil
-}
-
 func (vs *ValueStack) popN(n int) ([]value.Value, error) {
 	values := make([]value.Value, 0, n)
 	for i := 0; i < n; i++ {
@@ -408,7 +382,7 @@ func (ls *LabelStack) len() int {
 	return len(ls.labels)
 }
 
-func (ls *LabelStack) IsEmpty() bool {
+func (ls *LabelStack) isEmpty() bool {
 	return len(ls.labels) == 0
 }
 
@@ -449,7 +423,7 @@ func (s *Stack) LenLabel() int {
 }
 
 func (s *Stack) IsLabelEmpty() bool {
-	return s.Label.IsEmpty()
+	return s.Label.isEmpty()
 }
 
 type Label struct {

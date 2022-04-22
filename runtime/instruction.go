@@ -167,7 +167,6 @@ func (i *interpreter) execIf(instr instruction.Instruction) (instructionResult, 
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
 	label, l, err := i.labelBlock(instr, funcType)
-	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
 	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("if: %w", err)
 	}
@@ -251,7 +250,6 @@ func (i *interpreter) execBr(instr instruction.Instruction) (instructionResult, 
 
 func (i *interpreter) execBrIf(instr instruction.Instruction) (instructionResult, error) {
 	// https://webassembly.github.io/spec/core/exec/instructions.html#xref-syntax-instructions-syntax-instr-control-mathsf-br-l
-	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
 	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("br_if: %w", err)
 	}
@@ -407,7 +405,6 @@ func (i *interpreter) execUnreachable(instr instruction.Instruction) (instructio
 }
 
 func (i *interpreter) execSelect(instr instruction.Instruction) (instructionResult, error) {
-	// if err := i.stack.Value.Validate([]types.ValueType{types.I32}); err != nil {
 	if err := i.stack.ValidateValue([]types.ValueType{types.I32}); err != nil {
 		return instructionResultTrap, fmt.Errorf("select :%w", err)
 	}

@@ -3,7 +3,6 @@ package value
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"math"
 	"strconv"
 	"unsafe"
@@ -27,7 +26,6 @@ type Reference interface {
 
 type Value interface {
 	ValType() ValueType
-	// ExpectNumber() (NumberType, error)
 }
 
 type NumberType uint8
@@ -144,22 +142,6 @@ func (i I64) ToValue() Value {
 	return i
 }
 
-func (I64) ExpectNumber() (NumberType, error) {
-	return NumTypeI64, nil
-}
-
-func (i I64) ToUint64() (uint64, error) {
-	buff := bytes.NewBuffer(make([]byte, 0, 8))
-	if err := binary.Write(buff, binary.BigEndian, int64(i)); err != nil {
-		return 0, fmt.Errorf("ToUint64: %w", err)
-	}
-	var v uint64
-	if err := binary.Read(buff, binary.BigEndian, &v); err != nil {
-		return 0, fmt.Errorf("ToUint64: %w", err)
-	}
-	return v, nil
-}
-
 type F32 float32
 
 func (F32) NumType() NumberType {
@@ -179,10 +161,6 @@ func (F32) ValidateValueType(v types.ValueType) bool {
 
 func (f F32) ToValue() Value {
 	return f
-}
-
-func (F32) ExpectNumber() (NumberType, error) {
-	return NumTypeF32, nil
 }
 
 type F64 float64
@@ -206,18 +184,10 @@ func (F64) ValidateValueType(v types.ValueType) bool {
 	return false
 }
 
-func (F64) ExpectNumber() (NumberType, error) {
-	return NumTypeF64, nil
-}
-
 type Vector [16]byte // 128bit value
 
 func (Vector) ValType() ValueType {
 	return ValTypeVec
-}
-
-func (Vector) ExpectNumber() (NumberType, error) {
-	return NumberType(0xff), fmt.Errorf("Not number")
 }
 
 func Float32FromUint32(val uint32) float32 {
@@ -345,6 +315,7 @@ func (FrameVal) ValType() ValueType {
 	return ValTypeFrame
 }
 
+// dummy for label stack
 type LabelVal struct{}
 
 func (LabelVal) ValType() ValueType {
