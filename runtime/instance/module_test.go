@@ -48,7 +48,7 @@ func TestModuleGetExports(t *testing.T) {
 		{path: "../../examples/empty_module.wasm", exportLen: 0},
 		{path: "../../examples/func1.wasm", exportLen: 1},
 		{path: "../../examples/call_func1.wasm", exportLen: 1},
-		{path: "../../examples/local1.wasm", exportLen: 2},
+		{path: "../../examples/local1.wasm", exportLen: 8},
 	} {
 		dec, err := decoder.New(d.path)
 		require.NoError(t, err)

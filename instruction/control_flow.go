@@ -1,6 +1,10 @@
 package instruction
 
-import "github.com/terassyi/gowi/types"
+import (
+	"fmt"
+
+	"github.com/terassyi/gowi/types"
+)
 
 type Unreachable struct{}
 
@@ -16,6 +20,10 @@ func (*Unreachable) String() string {
 	return "unreachable"
 }
 
+func (*Unreachable) ImmString() string {
+	return ""
+}
+
 type Nop struct{}
 
 func (*Nop) Opcode() Opcode {
@@ -28,6 +36,10 @@ func (*Nop) imm() any {
 
 func (*Nop) String() string {
 	return "nop"
+}
+
+func (*Nop) ImmString() string {
+	return ""
 }
 
 type Block struct {
@@ -46,6 +58,10 @@ func (*Block) String() string {
 	return "block"
 }
 
+func (b *Block) ImmString() string {
+	return fmt.Sprintf("%s", types.ValueType(b.Imm))
+}
+
 type Loop struct {
 	Imm types.BlockType
 }
@@ -60,6 +76,10 @@ func (l *Loop) imm() any {
 
 func (*Loop) String() string {
 	return "loop"
+}
+
+func (l *Loop) ImmString() string {
+	return fmt.Sprintf("%s", types.ValueType(l.Imm))
 }
 
 type If struct {
@@ -78,6 +98,10 @@ func (*If) String() string {
 	return "if"
 }
 
+func (i *If) ImmString() string {
+	return fmt.Sprintf("%s", types.ValueType(i.Imm))
+}
+
 type Else struct{}
 
 func (*Else) Opcode() Opcode {
@@ -92,6 +116,10 @@ func (*Else) String() string {
 	return "else"
 }
 
+func (*Else) ImmString() string {
+	return ""
+}
+
 type End struct{}
 
 func (*End) Opcode() Opcode {
@@ -104,6 +132,10 @@ func (*End) imm() any {
 
 func (*End) String() string {
 	return "end"
+}
+
+func (*End) ImmString() string {
+	return ""
 }
 
 type Br struct {
@@ -122,6 +154,10 @@ func (*Br) String() string {
 	return "br"
 }
 
+func (b *Br) ImmString() string {
+	return fmt.Sprintf("%d", b.Imm)
+}
+
 type BrIf struct {
 	Imm uint32
 }
@@ -136,6 +172,10 @@ func (bi *BrIf) imm() any {
 
 func (*BrIf) String() string {
 	return "bf_if"
+}
+
+func (b *BrIf) ImmString() string {
+	return fmt.Sprintf("%d", b.Imm)
 }
 
 type BrTableImm struct {
@@ -159,6 +199,10 @@ func (*BrTable) String() string {
 	return "br_table"
 }
 
+func (b *BrTable) ImmString() string {
+	return fmt.Sprintf("%d %v", b.Imm.DefaultTarget, b.Imm.TargetTable)
+}
+
 type Return struct{}
 
 func (*Return) Opcode() Opcode {
@@ -171,4 +215,8 @@ func (*Return) imm() any {
 
 func (*Return) String() string {
 	return "return"
+}
+
+func (*Return) ImmString() string {
+	return ""
 }

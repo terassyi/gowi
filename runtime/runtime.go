@@ -45,7 +45,7 @@ func (c *current) update(s *stack.Stack) error {
 }
 
 func (c *current) updateLabel(s *stack.Stack) error {
-	label, err := s.Label.Top()
+	label, err := s.TopLabel()
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (c *current) updateLabel(s *stack.Stack) error {
 }
 
 func (c *current) updateFrame(s *stack.Stack) error {
-	frame, err := s.Frame.Top()
+	frame, err := s.TopFrame()
 	if err != nil {
 		return err
 	}
@@ -86,6 +86,7 @@ func New(mod *structure.Module, externalvals []instance.ExternalValue, debugLeve
 }
 
 func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, error) {
+	i.debubber.ShowInfo(name)
 	ext, err := i.instance.GetExport(name)
 	if err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
@@ -97,10 +98,10 @@ func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, 
 	if err := validateLocals(f, locals); err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
-	if err := i.stack.Frame.Push(stack.Frame{Module: nil, Locals: nil}); err != nil {
+	if err := i.stack.PushFrame(stack.Frame{Module: nil, Locals: nil}); err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
-	if err := i.stack.Label.Push(stack.Label{Instructions: nil, N: 0}); err != nil {
+	if err := i.stack.PushLabel(stack.Label{Instructions: nil, N: 0}); err != nil {
 		return nil, fmt.Errorf("Invoke: \n\t%w", err)
 	}
 	for _, v := range locals {
@@ -124,7 +125,7 @@ func (i *interpreter) Invoke(name string, locals []value.Value) ([]value.Value, 
 // https://webassembly.github.io/spec/core/exec/instructions.html#invocation-of-function-address-a
 func (i *interpreter) invokeFunction(f *instance.Function) error {
 	// valudate local arguments and values on the stack
-	if err := i.stack.Value.Validate(f.Type.Params); err != nil {
+	if err := i.stack.ValidateValue(f.Type.Params); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// get function arguments from the value stack
@@ -132,10 +133,11 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	if err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	if err := i.stack.Frame.Push(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
+	locals = append(locals, initLocalValues(f.Code.Locals)...)
+	if err := i.stack.PushFrame(stack.Frame{Module: f.Module, Locals: locals}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
-	if err := i.stack.Label.Push(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Flag: true}); err != nil {
+	if err := i.stack.PushLabel(stack.Label{Instructions: f.Code.Body, N: uint8(len(f.Type.Returns)), Sp: 0, Type: stack.LabelTypeFunction}); err != nil {
 		return fmt.Errorf("Invoke function: %w", err)
 	}
 	// sync current frame and label with top of the stack
@@ -146,16 +148,34 @@ func (i *interpreter) invokeFunction(f *instance.Function) error {
 	return nil
 }
 
+func initLocalValues(locals []types.ValueType) []value.Value {
+	values := make([]value.Value, 0, len(locals))
+	for _, l := range locals {
+		switch l {
+		case types.I32:
+			values = append(values, value.I32(0))
+		case types.I64:
+			values = append(values, value.I64(0))
+		case types.F32:
+			values = append(values, value.F32(0))
+		case types.F64:
+			values = append(values, value.F64(0))
+		}
+	}
+	return values
+}
+
 func (i *interpreter) execute() error {
 	for {
 		// frame := i.cur.frame
 		label := i.cur.label
 		contexSwitch := false
-		if i.stack.Label.Len() <= 1 {
+		if i.stack.LenLabel() <= 1 {
 			return nil
 		}
 		for sp := label.Sp; sp < len(label.Instructions); sp++ {
 			instr := label.Instructions[sp]
+			i.debubber.PrintInstr(i.stack, instr)
 			res, err := i.step(instr)
 			if err != nil {
 				return fmt.Errorf("execute: %w", err)
@@ -172,13 +192,12 @@ func (i *interpreter) execute() error {
 					return fmt.Errorf("execute: %w", err)
 				}
 				contexSwitch = true
-			case instructionResultReturn:
 			case instructionResultEnterBlock:
 				if err := i.cur.update(i.stack); err != nil {
 					return fmt.Errorf("execute: %w", err)
 				}
 				contexSwitch = true
-			case instructionResultLabelEnd:
+			case instructionResultLabelEnd, instructionResultReturn:
 				if i.isInvocationFinished() {
 					return nil
 				}
@@ -190,13 +209,12 @@ func (i *interpreter) execute() error {
 				break
 			}
 		}
-		// fmt.Println("function context is changed.")
 	}
 }
 
 // https://webassembly.github.io/spec/core/exec/instructions.html#returning-from-a-function
 func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) {
-	if err := i.stack.Value.Validate(f.Type.Returns); err != nil {
+	if err := i.stack.ValidateValue(f.Type.Returns); err != nil {
 		return nil, fmt.Errorf("finish: %w", err)
 	}
 	values, err := i.stack.PopValuesRev(len(f.Type.Returns))
@@ -208,12 +226,11 @@ func (i *interpreter) finishInvoke(f *instance.Function) ([]value.Value, error) 
 }
 
 func (i *interpreter) isInvocationFinished() bool {
-	if i.stack.Label.Len() > 1 || i.stack.Label.IsEmpty() {
+	if i.stack.LenLabel() > 1 || i.stack.IsLabelEmpty() {
 		return false
 	}
-	if i.stack.Frame.Len() == 1 {
+	if i.stack.LenFrame() == 1 {
 		// frame stack: dummy
-		fmt.Println("function invocation is finished.")
 		return true
 	}
 	return false
@@ -245,12 +262,51 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 		return i.execConst(instr)
 	case instruction.GET_LOCAL, instruction.SET_LOCAL, instruction.TEE_LOCAL:
 		return i.execLocal(instr, i.cur.frame)
-	case instruction.I32_ADD, instruction.I64_ADD, instruction.F32_ADD, instruction.F64_ADD:
+	case instruction.I32_ADD, instruction.I64_ADD, instruction.F32_ADD, instruction.F64_ADD,
+		instruction.I32_SUB, instruction.I64_SUB,
+		instruction.I32_MUL, instruction.I64_MUL,
+		instruction.I32_DIV_S, instruction.I32_DIV_U, instruction.I64_DIV_S, instruction.I64_DIV_U,
+		instruction.I32_REM_S, instruction.I32_REM_U, instruction.I64_REM_S, instruction.I64_REM_U,
+		instruction.I32_AND, instruction.I64_AND,
+		instruction.I32_OR, instruction.I64_OR,
+		instruction.I32_XOR, instruction.I64_XOR,
+		instruction.I32_SHL, instruction.I64_SHL,
+		instruction.I32_SHR_U, instruction.I64_SHR_U,
+		instruction.I32_SHR_S, instruction.I64_SHR_S,
+		instruction.I32_ROTL, instruction.I64_ROTL,
+		instruction.I32_ROTR, instruction.I64_ROTR,
+		instruction.I32_EQ, instruction.I64_EQ,
+		instruction.I32_NE, instruction.I64_NE,
+		instruction.I32_LT_S, instruction.I64_LT_S,
+		instruction.I32_LT_U, instruction.I64_LT_U,
+		instruction.I32_GT_S, instruction.I64_GT_S,
+		instruction.I32_GT_U, instruction.I64_GT_U,
+		instruction.I32_LE_S, instruction.I64_LE_S,
+		instruction.I32_LE_U, instruction.I64_LE_U,
+		instruction.I32_GE_S, instruction.I64_GE_S,
+		instruction.I32_GE_U, instruction.I64_GE_U:
 		return i.execBinop(instr)
+	case instruction.I32_EQZ, instruction.I64_EQZ,
+		instruction.I32_CLZ, instruction.I64_CLZ,
+		instruction.I32_CTZ, instruction.I64_CTZ,
+		instruction.I32_POPCNT, instruction.I64_POPCNT:
+		return i.execUnop(instr)
 	case instruction.CALL:
 		return i.execCall(instr)
 	case instruction.END:
 		return i.execLabelEnd(instr)
+	case instruction.I32_LOAD, instruction.I64_LOAD,
+		instruction.I32_LOAD8_S, instruction.I64_LOAD8_S,
+		instruction.I32_LOAD8_U, instruction.I64_LOAD8_U,
+		instruction.I32_LOAD16_S, instruction.I64_LOAD16_S,
+		instruction.I32_LOAD16_U, instruction.I64_LOAD16_U,
+		instruction.I64_LOAD32_S, instruction.I64_LOAD32_U:
+		return i.execLoad(instr)
+	case instruction.I32_STORE, instruction.I64_STORE,
+		instruction.I32_STORE8, instruction.I64_STORE8,
+		instruction.I32_STORE16, instruction.I64_STORE16,
+		instruction.I64_STORE32:
+		return i.execStore(instr)
 	default:
 		// return instruction.InvalidOpcode
 		return instructionResultTrap, nil
@@ -258,12 +314,12 @@ func (i *interpreter) step(instr instruction.Instruction) (instructionResult, er
 }
 
 func (i *interpreter) restoreStack() error {
-	label, err := i.stack.Label.Pop()
+	label, err := i.stack.PopLabel()
 	if err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	if label.Flag {
-		if _, err := i.stack.Frame.Pop(); err != nil {
+	if label.IsFunction() {
+		if _, err := i.stack.PopFrame(); err != nil {
 			return fmt.Errorf("restore: %w", err)
 		}
 	}

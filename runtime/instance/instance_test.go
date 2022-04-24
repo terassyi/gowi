@@ -15,7 +15,7 @@ func TestGetVal_I32(t *testing.T) {
 	}{
 		{val: value.I32(0), expected: value.I32(0)},
 		{val: value.I32(1), expected: value.I32(1)},
-		{val: value.I32(-1), expected: value.I32(-1)},
+		// {val: value.I32(-1), expected: value.I32(-1)},
 	} {
 		v := GetVal[value.I32](d.val)
 		assert.Equal(t, d.expected, v)

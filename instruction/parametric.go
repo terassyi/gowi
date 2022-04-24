@@ -14,6 +14,10 @@ func (*Drop) String() string {
 	return "drop"
 }
 
+func (*Drop) ImmString() string {
+	return ""
+}
+
 type Select struct{}
 
 func (*Select) Opcode() Opcode {
@@ -26,4 +30,8 @@ func (*Select) imm() any {
 
 func (*Select) String() string {
 	return "select"
+}
+
+func (*Select) ImmString() string {
+	return ""
 }
