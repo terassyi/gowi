@@ -10,13 +10,13 @@ I only implemented limited features now.
 Please see features section.
 
 ## Features
-[*] Control flow instructions
-[*] Integer instructions
-[] Float instructions
-[] Global values
-[] Import some functions
-[] Implement instruction validator
-[] WASI
+- [x] Control flow instructions
+- [x] Integer instructions
+- [ ] Float instructions
+- [ ] Global values
+- [ ] Import some functions
+- [ ] Implement instruction validator
+- [ ] WASI
 
 ## Try
 You can try Gowi with docker container or go version 1.18.
